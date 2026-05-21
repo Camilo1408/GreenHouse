@@ -1,0 +1,39 @@
+# Entorno
+.env
+*.env.local
+
+# Java / Maven
+target/
+*.jar
+*.class
+.mvn/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tests
+tests-python/__pycache__/
+tests-python/.pytest_cache/
+tests-python/report.html
+tests-python/reporte-taiga.html
+tests-selenium/__pycache__/
+tests-selenium/.pytest_cache/
+tests-selenium/reporte-selenium.html
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Secretos — NUNCA subir
+greenhouse-backend/src/main/resources/application-prod.properties

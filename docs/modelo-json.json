@@ -1,0 +1,280 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "title": "GreenHouse Manager — Modelo de Datos JSON",
+  "description": "Esquema completo de las entidades del sistema de gestión de invernaderos",
+  "version": "1.0.0",
+  "authors": ["[Nombres del equipo]"],
+  "date": "2026",
+
+  "entities": {
+
+    "Zona": {
+      "table": "zona",
+      "description": "Área física del invernadero con condiciones ambientales homogéneas",
+      "properties": {
+        "id":                  { "type": "integer", "description": "Identificador único" },
+        "nombre":              { "type": "string",  "maxLength": 100, "description": "Nombre descriptivo de la zona" },
+        "dimensionM2":         { "type": "number",  "minimum": 0.1,  "description": "Dimensión en metros cuadrados" },
+        "capacidadMaxPlantas": { "type": "integer", "minimum": 1,    "description": "Máximo de plantas permitidas" },
+        "estado":              { "type": "string",  "enum": ["ACTIVA", "EN_MANTENIMIENTO", "INACTIVA"] },
+        "ubicacion":           { "type": "string",  "maxLength": 200, "description": "Descripción física del sector" }
+      },
+      "required": ["nombre", "estado"],
+      "example": {
+        "id": 1,
+        "nombre": "Zona A - Tomates",
+        "dimensionM2": 120.0,
+        "capacidadMaxPlantas": 200,
+        "estado": "ACTIVA",
+        "ubicacion": "Sector Norte"
+      }
+    },
+
+    "TipoPlanta": {
+      "table": "tipo_planta",
+      "description": "Catálogo de especies cultivables con parámetros ambientales óptimos",
+      "properties": {
+        "id":               { "type": "integer", "description": "Identificador único" },
+        "nombre":           { "type": "string",  "maxLength": 100, "description": "Nombre de la especie" },
+        "descripcion":      { "type": "string",  "maxLength": 500 },
+        "temperaturaMin":   { "type": "number",  "minimum": 0.0, "maximum": 60.0, "description": "Temperatura mínima óptima en °C" },
+        "temperaturaMax":   { "type": "number",  "minimum": 0.0, "maximum": 60.0, "description": "Temperatura máxima óptima en °C" },
+        "humedadMin":       { "type": "number",  "minimum": 0.0, "maximum": 100.0, "description": "Humedad relativa mínima óptima %" },
+        "humedadMax":       { "type": "number",  "minimum": 0.0, "maximum": 100.0, "description": "Humedad relativa máxima óptima %" },
+        "cicloDias":        { "type": "integer", "minimum": 1, "description": "Días de siembra a cosecha" },
+        "cuidadosEspeciales": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["nombre", "temperaturaMin", "temperaturaMax", "humedadMin", "humedadMax", "cicloDias"],
+      "example": {
+        "id": 1,
+        "nombre": "Tomate Cherry",
+        "descripcion": "Tomate de fruto pequeño, ideal para ensaladas",
+        "temperaturaMin": 18.0,
+        "temperaturaMax": 28.0,
+        "humedadMin": 60.0,
+        "humedadMax": 80.0,
+        "cicloDias": 75,
+        "cuidadosEspeciales": "Tutorear cuando alcance 30cm. Podar brotes laterales."
+      }
+    },
+
+    "Empleado": {
+      "table": "empleado",
+      "description": "Usuario del sistema con rol y método de autenticación",
+      "properties": {
+        "id":              { "type": "integer" },
+        "nombreCompleto":  { "type": "string",  "maxLength": 150 },
+        "email":           { "type": "string",  "format": "email" },
+        "rol":             { "type": "string",  "enum": ["ADMINISTRADOR", "SUPERVISOR", "EMPLEADO"] },
+        "telefono":        { "type": "string",  "maxLength": 20 },
+        "estado":          { "type": "string",  "enum": ["ACTIVO", "INACTIVO"], "default": "ACTIVO" },
+        "fechaIngreso":    { "type": "string",  "format": "date" },
+        "emailVerificado": { "type": "boolean", "default": false },
+        "authProvider":    { "type": "string",  "enum": ["LOCAL", "GOOGLE"], "default": "LOCAL" }
+      },
+      "required": ["nombreCompleto", "email", "rol"],
+      "note": "passwordHash se omite del JSON por seguridad",
+      "example": {
+        "id": 1,
+        "nombreCompleto": "Carlos Administrador",
+        "email": "admin@greenhouse.com",
+        "rol": "ADMINISTRADOR",
+        "telefono": "3001234567",
+        "estado": "ACTIVO",
+        "fechaIngreso": "2024-01-15",
+        "emailVerificado": true,
+        "authProvider": "LOCAL"
+      }
+    },
+
+    "Planta": {
+      "table": "planta",
+      "description": "Ejemplar individual de planta con trazabilidad completa de su ciclo de vida",
+      "properties": {
+        "id":           { "type": "integer" },
+        "codigo":       { "type": "string",  "maxLength": 50, "description": "Código físico único (ej: TOM-001)" },
+        "tipoPlanta":   { "$ref": "#/entities/TipoPlanta" },
+        "zona":         { "$ref": "#/entities/Zona" },
+        "fechaSiembra": { "type": "string",  "format": "date" },
+        "estado":       { "type": "string",  "enum": ["SEMBRADA", "EN_CRECIMIENTO", "LISTA_PARA_COSECHAR", "COSECHADA", "MUERTA"] },
+        "observaciones":{ "type": "string",  "maxLength": 500 }
+      },
+      "required": ["codigo", "tipoPlanta", "zona", "fechaSiembra", "estado"],
+      "example": {
+        "id": 1,
+        "codigo": "TOM-001",
+        "tipoPlanta": { "id": 1, "nombre": "Tomate Cherry" },
+        "zona": { "id": 1, "nombre": "Zona A - Tomates" },
+        "fechaSiembra": "2026-03-01",
+        "estado": "LISTA_PARA_COSECHAR",
+        "observaciones": null
+      }
+    },
+
+    "Sensor": {
+      "table": "sensor",
+      "description": "Dispositivo físico que mide variables ambientales en una zona",
+      "properties": {
+        "id":               { "type": "integer" },
+        "codigo":           { "type": "string", "maxLength": 50 },
+        "tipoSensor":       { "type": "string", "enum": ["TEMPERATURA", "HUMEDAD", "PH", "CO2", "LUZ"] },
+        "zona":             { "$ref": "#/entities/Zona" },
+        "estado":           { "type": "string", "enum": ["ACTIVO", "INACTIVO", "EN_MANTENIMIENTO"], "default": "ACTIVO" },
+        "fechaInstalacion": { "type": "string", "format": "date" },
+        "umbralMin":        { "type": "number", "description": "Valor mínimo aceptable" },
+        "umbralMax":        { "type": "number", "description": "Valor máximo aceptable" }
+      },
+      "required": ["codigo", "tipoSensor", "zona"],
+      "example": {
+        "id": 1,
+        "codigo": "SENS-TA-01",
+        "tipoSensor": "TEMPERATURA",
+        "zona": { "id": 1, "nombre": "Zona A - Tomates" },
+        "estado": "ACTIVO",
+        "fechaInstalacion": "2024-01-01",
+        "umbralMin": 18.0,
+        "umbralMax": 28.0
+      }
+    },
+
+    "LecturaSensor": {
+      "table": "lectura_sensor",
+      "description": "Medición puntual registrada por un sensor en un momento dado",
+      "properties": {
+        "id":        { "type": "integer" },
+        "sensor":    { "$ref": "#/entities/Sensor" },
+        "valor":     { "type": "number" },
+        "unidad":    { "type": "string", "maxLength": 20, "examples": ["°C", "%", "pH", "ppm", "lux"] },
+        "fechaHora": { "type": "string", "format": "date-time" },
+        "fuente":    { "type": "string", "enum": ["AUTOMATICA", "MANUAL"] }
+      },
+      "required": ["sensor", "valor", "unidad", "fechaHora", "fuente"],
+      "example": {
+        "id": 1,
+        "sensor": { "id": 1, "codigo": "SENS-TA-01" },
+        "valor": 31.0,
+        "unidad": "°C",
+        "fechaHora": "2026-05-16T20:00:00",
+        "fuente": "MANUAL"
+      }
+    },
+
+    "Alerta": {
+      "table": "alerta",
+      "description": "Aviso automático generado cuando una lectura supera los umbrales del sensor",
+      "properties": {
+        "id":              { "type": "integer" },
+        "tipo":            { "type": "string",  "maxLength": 200, "description": "Categoría del evento (ej: UMBRAL_TEMPERATURA)" },
+        "severidad":       { "type": "string",  "enum": ["BAJA", "MEDIA", "ALTA", "CRITICA"] },
+        "zona":            { "$ref": "#/entities/Zona" },
+        "sensor":          { "$ref": "#/entities/Sensor" },
+        "fechaGeneracion": { "type": "string",  "format": "date-time" },
+        "estado":          { "type": "string",  "enum": ["PENDIENTE", "ATENDIDA", "DESCARTADA"], "default": "PENDIENTE" },
+        "descripcion":     { "type": "string",  "maxLength": 500 }
+      },
+      "required": ["tipo", "severidad", "zona", "fechaGeneracion"],
+      "example": {
+        "id": 1,
+        "tipo": "UMBRAL_TEMPERATURA",
+        "severidad": "ALTA",
+        "zona": { "id": 1, "nombre": "Zona A - Tomates" },
+        "sensor": { "id": 1, "codigo": "SENS-TA-01" },
+        "fechaGeneracion": "2026-05-16T20:00:00",
+        "estado": "PENDIENTE",
+        "descripcion": "Sensor SENS-TA-01 en Zona A: temperatura 31.0°C supera el máximo de 28.0°C"
+      }
+    },
+
+    "Cosecha": {
+      "table": "cosecha",
+      "description": "Registro de producción obtenida de una planta con datos de calidad y destino",
+      "properties": {
+        "id":            { "type": "integer" },
+        "planta":        { "$ref": "#/entities/Planta" },
+        "empleado":      { "$ref": "#/entities/Empleado" },
+        "fechaCosecha":  { "type": "string", "format": "date" },
+        "pesoKg":        { "type": "number", "minimum": 0.01 },
+        "calidad":       { "type": "string", "enum": ["A", "B", "C"] },
+        "destino":       { "type": "string", "enum": ["VENTA", "CONSUMO_INTERNO", "DESCARTE"] },
+        "observaciones": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["planta", "empleado", "fechaCosecha", "pesoKg", "calidad", "destino"],
+      "example": {
+        "id": 1,
+        "planta": { "id": 5, "codigo": "TOM-005" },
+        "empleado": { "id": 3, "nombreCompleto": "Juan Pérez" },
+        "fechaCosecha": "2026-05-14",
+        "pesoKg": 6.0,
+        "calidad": "A",
+        "destino": "VENTA",
+        "observaciones": "Mejor cosecha del mes"
+      }
+    },
+
+    "Tratamiento": {
+      "table": "tratamiento",
+      "description": "Intervención aplicada a una planta (fertilización, poda, pesticida, etc.)",
+      "properties": {
+        "id":                 { "type": "integer" },
+        "planta":             { "$ref": "#/entities/Planta" },
+        "empleado":           { "$ref": "#/entities/Empleado" },
+        "tipoTratamiento":    { "type": "string", "enum": ["FERTILIZACION", "PESTICIDA", "PODA", "RIEGO_MANUAL", "REVISION"] },
+        "productoUtilizado":  { "type": "string", "maxLength": 150 },
+        "dosis":              { "type": "string", "maxLength": 100 },
+        "fechaHora":          { "type": "string", "format": "date-time" },
+        "resultadoObservado": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["planta", "empleado", "tipoTratamiento", "fechaHora"],
+      "example": {
+        "id": 1,
+        "planta": { "id": 1, "codigo": "TOM-001" },
+        "empleado": { "id": 3, "nombreCompleto": "Juan Pérez" },
+        "tipoTratamiento": "FERTILIZACION",
+        "productoUtilizado": "Nitrofoska",
+        "dosis": "5g/L",
+        "fechaHora": "2026-05-09T08:00:00",
+        "resultadoObservado": "Mejora visible en color de hojas"
+      }
+    },
+
+    "Turno": {
+      "table": "turno",
+      "description": "Asignación horaria de un empleado a una zona del invernadero",
+      "properties": {
+        "id":                   { "type": "integer" },
+        "empleado":             { "$ref": "#/entities/Empleado" },
+        "zona":                 { "$ref": "#/entities/Zona" },
+        "fechaHoraInicio":      { "type": "string", "format": "date-time" },
+        "fechaHoraFin":         { "type": ["string", "null"], "format": "date-time", "description": "null si el turno está en curso" },
+        "actividadesRealizadas":{ "type": "string", "maxLength": 1000 }
+      },
+      "required": ["empleado", "zona", "fechaHoraInicio"],
+      "example": {
+        "id": 1,
+        "empleado": { "id": 3, "nombreCompleto": "Juan Pérez" },
+        "zona": { "id": 1, "nombre": "Zona A - Tomates" },
+        "fechaHoraInicio": "2026-05-15T07:00:00",
+        "fechaHoraFin": "2026-05-15T15:00:00",
+        "actividadesRealizadas": "Riego manual zona A, revisión de sensores, registro de lecturas"
+      }
+    }
+  },
+
+  "api_endpoints": {
+    "auth":     [
+      "POST /api/auth/register",
+      "GET  /api/auth/verify?token={token}",
+      "POST /api/auth/login",
+      "POST /api/auth/logout",
+      "GET  /api/auth/me",
+      "POST /api/auth/resend-verification?email={email}"
+    ],
+    "zonas":    ["GET /api/zonas", "GET /api/zonas/{id}", "POST /api/zonas", "PUT /api/zonas/{id}", "DELETE /api/zonas/{id}"],
+    "plantas":  ["GET /api/plantas", "GET /api/plantas/{id}", "GET /api/plantas/zona/{zonaId}", "GET /api/plantas/estado/{estado}", "POST /api/plantas", "PUT /api/plantas/{id}", "DELETE /api/plantas/{id}"],
+    "alertas":  ["GET /api/alertas", "GET /api/alertas/pendientes", "GET /api/alertas/count/pendientes", "PATCH /api/alertas/{id}/atender", "PATCH /api/alertas/{id}/descartar"],
+    "cosechas": ["GET /api/cosechas", "GET /api/cosechas/periodo?inicio={}&fin={}", "GET /api/cosechas/estadisticas/mes?year={}&month={}", "POST /api/cosechas"],
+    "empleados":["GET /api/empleados", "GET /api/empleados/{id}", "POST /api/empleados", "PUT /api/empleados/{id}", "DELETE /api/empleados/{id}"],
+    "lecturas": ["GET /api/lecturas/sensor/{sensorId}", "POST /api/lecturas"],
+    "tipos-planta": ["GET /api/tipos-planta", "GET /api/tipos-planta/{id}", "POST /api/tipos-planta", "PUT /api/tipos-planta/{id}", "DELETE /api/tipos-planta/{id}"]
+  }
+}
