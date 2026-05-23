@@ -99,6 +99,8 @@ class PlantaServiceTest {
     @DisplayName("save debe persistir la planta si el código no existe")
     void save_codigoNuevo_debePersistir() {
         when(plantaRepository.existsByCodigo("TOM-001")).thenReturn(false);
+        when(zonaRepository.existsById(1L)).thenReturn(true);
+        when(tipoPlantaRepository.existsById(1L)).thenReturn(true);
         when(plantaRepository.save(planta)).thenReturn(planta);
 
         Planta resultado = plantaService.save(planta);
@@ -152,6 +154,8 @@ class PlantaServiceTest {
                 .build();
 
         when(plantaRepository.findById(1L)).thenReturn(Optional.of(planta));
+        when(zonaRepository.existsById(1L)).thenReturn(true);
+        when(tipoPlantaRepository.existsById(1L)).thenReturn(true);
         when(plantaRepository.save(any(Planta.class))).thenAnswer(i -> i.getArgument(0));
 
         Planta resultado = plantaService.update(1L, actualizada);

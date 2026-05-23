@@ -44,7 +44,7 @@ public class DataInitializer implements CommandLineRunner {
             log.info("Datos de prueba ya existen. Omitiendo inicialización.");
             // Asegurar que usuarios OAuth existentes tengan emailVerificado=true
             empleadoRepo.findAll().forEach(e -> {
-                if (!Boolean.TRUE.equals(e.getEmailVerificado())) {
+                if (!e.isEmailVerificado()) {
                     e.setEmailVerificado(true);
                     if (e.getAuthProvider() == null) e.setAuthProvider(Empleado.AuthProvider.GOOGLE);
                     empleadoRepo.save(e);

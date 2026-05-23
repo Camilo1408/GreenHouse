@@ -29,7 +29,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         Empleado empleado = empleadoRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("No existe cuenta con el email: " + email));
 
-        if (!Boolean.TRUE.equals(empleado.getEmailVerificado())) {
+        if (!empleado.isEmailVerificado()) {
             throw new UsernameNotFoundException("Debes verificar tu correo antes de iniciar sesión.");
         }
 

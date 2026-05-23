@@ -110,7 +110,7 @@ public class AuthService {
         Empleado empleado = empleadoRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("No existe cuenta con ese correo."));
 
-        if (Boolean.TRUE.equals(empleado.getEmailVerificado())) {
+        if (empleado.isEmailVerificado()) {
             return AuthResponse.builder().exito(false).mensaje("Este correo ya fue verificado.").build();
         }
 

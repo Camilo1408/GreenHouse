@@ -64,7 +64,7 @@ public class Empleado {
     /** Indica si el correo fue verificado (requerido para login local). */
     @Column(name = "email_verificado")
     @Builder.Default
-    private Boolean emailVerificado = false;
+    private boolean emailVerificado = false;
 
     /** Origen del registro del usuario. */
     @Enumerated(EnumType.STRING)
