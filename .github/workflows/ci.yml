@@ -356,7 +356,7 @@ jobs:
           TAIGA_URL: ${{ secrets.TAIGA_URL }}
           TAIGA_USERNAME: ${{ secrets.TAIGA_USERNAME }}
           TAIGA_PASSWORD: ${{ secrets.TAIGA_PASSWORD }}
-          TAIGA_PROJECT_SLUG: ${{ secrets.TAIGA_PROJECT_SLUG }}
+          TAIGA_PROJECT_SLUG: ${{ secrets.TAIGA_PROJECT_SLUG || 'cesar_camilo-greenhouse-manager' }}
           API_BASE_URL: http://localhost:8080
 
       - name: Publicar reporte Taiga

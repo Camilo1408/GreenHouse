@@ -19,7 +19,7 @@ import requests
 TAIGA_URL      = os.getenv("TAIGA_URL",      "https://api.taiga.io/api/v1")
 TAIGA_USER     = os.getenv("TAIGA_USERNAME", "")
 TAIGA_PASSWORD = os.getenv("TAIGA_PASSWORD", "")
-TAIGA_SLUG     = os.getenv("TAIGA_PROJECT_SLUG", "greenhouse-manager")
+TAIGA_SLUG     = os.getenv("TAIGA_PROJECT_SLUG", "cesar_camilo-greenhouse-manager")
 API_BASE       = os.getenv("API_BASE_URL",   "http://localhost:8080")
 
 # Historias de usuario que DEBEN existir en el proyecto Taiga

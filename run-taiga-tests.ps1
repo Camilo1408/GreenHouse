@@ -17,7 +17,7 @@ param(
     [string]$TaigaPass,
 
     [Parameter(Mandatory=$false)]
-    [string]$Slug = "",
+    [string]$Slug = "cesar_camilo-greenhouse-manager",
 
     [Parameter(Mandatory=$false)]
     [string]$ApiBase = "http://localhost:8080"
