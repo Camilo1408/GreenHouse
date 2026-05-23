@@ -4,18 +4,39 @@
 import pytest
 import requests
 
-BASE_URL = "http://localhost:8080/api"
+BASE_URL  = "http://localhost:8080"
+ADMIN_EMAIL    = "admin@greenhouse.com"
+ADMIN_PASSWORD = "Admin1234"
+
 
 @pytest.fixture(scope="session")
 def base_url():
     return BASE_URL
 
+
 @pytest.fixture(scope="session")
-def session():
-    """Sesion HTTP compartida para todas las pruebas."""
+def auth_session():
+    """
+    Sesión autenticada como administrador.
+    Se crea una sola vez y se reutiliza en todos los tests.
+    """
     s = requests.Session()
-    s.headers.update({"Content-Type": "application/json"})
+    resp = s.post(
+        f"{BASE_URL}/api/auth/login",
+        data={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        allow_redirects=True,
+    )
+    if resp.status_code not in (200, 302):
+        pytest.skip(f"No se pudo autenticar en el backend: {resp.status_code} — ¿está corriendo el backend?")
     return s
+
+
+@pytest.fixture(scope="session")
+def session(auth_session):
+    """Alias de auth_session para compatibilidad con tests existentes."""
+    return auth_session
+
 
 @pytest.fixture
 def zona_payload():

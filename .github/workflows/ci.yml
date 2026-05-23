@@ -135,9 +135,22 @@ jobs:
             --spring.datasource.password=postgres \
             --spring.jpa.hibernate.ddl-auto=create-drop \
             --spring.security.oauth2.client.registration.google.client-id=test \
-            --spring.security.oauth2.client.registration.google.client-secret=test &
-          echo "Esperando que el backend inicie..."
-          sleep 30
+            --spring.security.oauth2.client.registration.google.client-secret=test \
+            --spring.mail.host=localhost \
+            --spring.mail.port=25 \
+            --spring.mail.username=test@test.com \
+            --spring.mail.password=test \
+            --spring.mail.properties.mail.smtp.auth=false \
+            --spring.mail.properties.mail.smtp.starttls.enable=false &
+          echo "Esperando que el backend inicie (health check)..."
+          for i in $(seq 1 24); do
+            sleep 5
+            if curl -sf http://localhost:8080/api/zonas > /dev/null 2>&1; then
+              echo "Backend listo después de $((i*5))s"
+              break
+            fi
+            echo "Intento $i/24 — backend aún no responde..."
+          done
         env:
           GOOGLE_CLIENT_ID: test
           GOOGLE_CLIENT_SECRET: test
@@ -241,11 +254,19 @@ jobs:
             --spring.jpa.hibernate.ddl-auto=create-drop \
             --spring.security.oauth2.client.registration.google.client-id=test \
             --spring.security.oauth2.client.registration.google.client-secret=test \
-            --spring.mail.host=smtp.gmail.com \
-            --spring.mail.username=noreply@test.com \
-            --spring.mail.password=testpass &
-          echo "Esperando backend..."
-          sleep 35
+            --spring.mail.host=localhost \
+            --spring.mail.port=25 \
+            --spring.mail.username=test@test.com \
+            --spring.mail.password=test \
+            --spring.mail.properties.mail.smtp.auth=false \
+            --spring.mail.properties.mail.smtp.starttls.enable=false &
+          for i in $(seq 1 24); do
+            sleep 5
+            if curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1 || curl -sf http://localhost:8080/swagger-ui.html > /dev/null 2>&1; then
+              echo "Backend listo después de $((i*5))s"; break
+            fi
+            echo "Intento $i/24..."
+          done
 
       - name: Configurar Node.js y arrancar frontend
         uses: actions/setup-node@v4
@@ -271,12 +292,13 @@ jobs:
 
       - name: Instalar Chrome
         uses: browser-actions/setup-chrome@v1
+        id: setup-chrome
 
       - name: Ejecutar tests Selenium
         working-directory: tests-selenium
         run: pytest -v --html=reporte-selenium.html --self-contained-html
         env:
-          DISPLAY: ':99'
+          CHROMEDRIVER_PATH: ${{ steps.setup-chrome.outputs.chromedriver-path }}
 
       - name: Publicar reporte Selenium
         uses: actions/upload-artifact@v4
@@ -335,10 +357,19 @@ jobs:
             --spring.jpa.hibernate.ddl-auto=create-drop \
             --spring.security.oauth2.client.registration.google.client-id=test \
             --spring.security.oauth2.client.registration.google.client-secret=test \
-            --spring.mail.host=smtp.gmail.com \
-            --spring.mail.username=noreply@test.com \
-            --spring.mail.password=testpass &
-          sleep 30
+            --spring.mail.host=localhost \
+            --spring.mail.port=25 \
+            --spring.mail.username=test@test.com \
+            --spring.mail.password=test \
+            --spring.mail.properties.mail.smtp.auth=false \
+            --spring.mail.properties.mail.smtp.starttls.enable=false &
+          for i in $(seq 1 24); do
+            sleep 5
+            if curl -sf http://localhost:8080/swagger-ui.html > /dev/null 2>&1; then
+              echo "Backend listo después de $((i*5))s"; break
+            fi
+            echo "Intento $i/24..."
+          done
 
       - name: Configurar Python
         uses: actions/setup-python@v5
