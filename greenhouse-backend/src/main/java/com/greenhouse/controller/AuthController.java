@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,6 +29,9 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
+
     @PostMapping("/register")
     @Operation(summary = "Registrar nuevo usuario con email y contraseña")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -41,9 +45,9 @@ public class AuthController {
     public void verify(@RequestParam String token, HttpServletResponse response) throws IOException {
         AuthResponse result = authService.verificarEmail(token);
         if (result.isExito()) {
-            response.sendRedirect("http://localhost:5173/login?verified=true");
+            response.sendRedirect(frontendUrl + "/login?verified=true");
         } else {
-            response.sendRedirect("http://localhost:5173/verify-error?msg=" + result.getMensaje());
+            response.sendRedirect(frontendUrl + "/verify-error?msg=" + result.getMensaje());
         }
     }
 

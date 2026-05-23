@@ -10,6 +10,7 @@ import com.greenhouse.repository.EmpleadoRepository;
 import com.greenhouse.service.UserDetailsServiceImpl;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -41,12 +42,20 @@ public class SecurityConfig {
     private final EmpleadoRepository empleadoRepository;
     private final UserDetailsServiceImpl userDetailsService;
 
+    @Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:8080"));
+        // frontendUrl puede ser localhost:5173 en dev o la URL real en prod
+        config.setAllowedOrigins(List.of(
+            "http://localhost:5173",
+            "http://localhost:8080",
+            frontendUrl
+        ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedHeaders(List.of("Content-Type", "Authorization", "Accept", "X-Requested-With"));
         config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
@@ -115,10 +124,10 @@ public class SecurityConfig {
             .oauth2Login(oauth2 -> oauth2
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService()))
                 .successHandler((req, res, auth) ->
-                    res.sendRedirect("http://localhost:5173/dashboard")
+                    res.sendRedirect(frontendUrl + "/dashboard")
                 )
                 .failureHandler((req, res, ex) ->
-                    res.sendRedirect("http://localhost:5173/login?error=oauth")
+                    res.sendRedirect(frontendUrl + "/login?error=oauth")
                 )
             )
             .logout(logout -> logout

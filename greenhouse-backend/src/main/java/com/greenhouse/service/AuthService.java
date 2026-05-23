@@ -10,6 +10,7 @@ import com.greenhouse.entity.*;
 import com.greenhouse.exception.ResourceNotFoundException;
 import com.greenhouse.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,9 @@ public class AuthService {
     private final VerificationTokenRepository tokenRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
 
     /**
      * Registra un nuevo usuario local.
@@ -99,7 +103,7 @@ public class AuthService {
         return AuthResponse.builder()
                 .exito(true)
                 .mensaje("¡Correo verificado exitosamente! Ya puedes iniciar sesión.")
-                .redirectUrl("http://localhost:5173/login?verified=true")
+                .redirectUrl(frontendUrl + "/login?verified=true")
                 .build();
     }
 

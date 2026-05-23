@@ -5,6 +5,7 @@
  */
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/layout/Layout'
+import PrivateRoute from './components/PrivateRoute'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
@@ -17,17 +18,25 @@ import EmpleadosPage from './pages/EmpleadosPage'
 export default function App() {
   return (
     <Routes>
+      {/* Rutas públicas */}
       <Route path="/login"    element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="zonas"     element={<ZonasPage />} />
-        <Route path="plantas"   element={<PlantasPage />} />
-        <Route path="alertas"   element={<AlertasPage />} />
-        <Route path="cosechas"  element={<CosechasPage />} />
-        <Route path="empleados" element={<EmpleadosPage />} />
+
+      {/* Rutas protegidas — requieren sesión activa */}
+      <Route element={<PrivateRoute />}>
+        <Route element={<Layout />}>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="zonas"     element={<ZonasPage />} />
+          <Route path="plantas"   element={<PlantasPage />} />
+          <Route path="alertas"   element={<AlertasPage />} />
+          <Route path="cosechas"  element={<CosechasPage />} />
+          <Route path="empleados" element={<EmpleadosPage />} />
+        </Route>
       </Route>
+
+      {/* Cualquier ruta desconocida → login */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )
 }

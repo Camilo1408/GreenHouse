@@ -38,3 +38,4 @@ venv/
 # Secretos — NUNCA subir
 greenhouse-backend/src/main/resources/application-prod.properties
 greenhouse-backend/src/main/resources/application-local.properties
+run-backend.local.ps1
