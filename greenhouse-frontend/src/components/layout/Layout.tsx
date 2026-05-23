@@ -3,7 +3,7 @@
  * Autores: [Nombres del equipo]
  * Fecha: 2026
  */
-import { Outlet, NavLink } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard, Map, Leaf, Bell, Wheat, Users, LogOut, Globe
@@ -11,9 +11,23 @@ import {
 
 export default function Layout() {
   const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
 
   const toggleLang = () =>
     i18n.changeLanguage(i18n.language === 'es' ? 'en' : 'es')
+
+  const handleLogout = async () => {
+    try {
+      await fetch('http://localhost:8080/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      })
+    } catch (_) {
+      // Si falla la llamada igual cerramos sesión en el frontend
+    } finally {
+      navigate('/login')
+    }
+  }
 
   const navItems = [
     { to: '/dashboard', icon: <LayoutDashboard size={18} />, label: t('nav.dashboard') },
@@ -60,13 +74,13 @@ export default function Layout() {
             <Globe size={18} />
             {i18n.language === 'es' ? 'English' : 'Español'}
           </button>
-          <a
-            href="http://localhost:8080/logout"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-green-200 hover:bg-green-700 hover:text-white transition-colors"
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-green-200 hover:bg-green-700 hover:text-white w-full transition-colors"
           >
             <LogOut size={18} />
             {t('nav.logout')}
-          </a>
+          </button>
         </div>
       </aside>
 
