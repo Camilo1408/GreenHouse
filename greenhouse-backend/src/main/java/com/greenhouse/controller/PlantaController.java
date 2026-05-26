@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -51,18 +52,21 @@ public class PlantaController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','SUPERVISOR')")
     @Operation(summary = "Registrar nueva planta")
     public ResponseEntity<Planta> create(@Valid @RequestBody Planta planta) {
         return ResponseEntity.status(HttpStatus.CREATED).body(plantaService.save(planta));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','SUPERVISOR')")
     @Operation(summary = "Actualizar planta")
     public ResponseEntity<Planta> update(@PathVariable Long id, @Valid @RequestBody Planta planta) {
         return ResponseEntity.ok(plantaService.update(id, planta));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Eliminar planta")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         plantaService.delete(id);

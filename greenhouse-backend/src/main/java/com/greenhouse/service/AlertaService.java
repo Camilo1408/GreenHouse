@@ -7,12 +7,15 @@ package com.greenhouse.service;
 
 import com.greenhouse.entity.Alerta;
 import com.greenhouse.entity.Empleado;
+import com.greenhouse.entity.Zona;
 import com.greenhouse.exception.ResourceNotFoundException;
 import com.greenhouse.repository.AlertaRepository;
 import com.greenhouse.repository.EmpleadoRepository;
+import com.greenhouse.repository.ZonaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -25,6 +28,7 @@ public class AlertaService {
 
     private final AlertaRepository alertaRepository;
     private final EmpleadoRepository empleadoRepository;
+    private final ZonaRepository zonaRepository;
 
     public List<Alerta> findAll() {
         return alertaRepository.findAll();
@@ -92,5 +96,32 @@ public class AlertaService {
 
     public long countPendientes() {
         return alertaRepository.countByEstado(Alerta.EstadoAlerta.PENDIENTE);
+    }
+
+    /**
+     * Crea una alerta manual (novedad reportada por un empleado o supervisor).
+     * Ejemplos: enfermedad en planta, falla de sistema en zona.
+     */
+    public Alerta crearManual(Long zonaId, String tipo, Alerta.Severidad severidad,
+                              String descripcion, Long empleadoId) {
+        Zona zona = zonaRepository.findById(zonaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Zona no encontrada con id: " + zonaId));
+
+        Alerta alerta = Alerta.builder()
+                .tipo(tipo)
+                .severidad(severidad)
+                .zona(zona)
+                .fechaGeneracion(LocalDateTime.now())
+                .estado(Alerta.EstadoAlerta.PENDIENTE)
+                .descripcion(descripcion)
+                .build();
+
+        if (empleadoId != null) {
+            Empleado empleado = empleadoRepository.findById(empleadoId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado con id: " + empleadoId));
+            alerta.setAtendidoPor(empleado);
+        }
+
+        return alertaRepository.save(alerta);
     }
 }

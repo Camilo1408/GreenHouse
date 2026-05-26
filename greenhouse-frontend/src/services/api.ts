@@ -60,6 +60,13 @@ export const alertaService = {
   getPendientes: () => api.get('/alertas/pendientes'),
   countPendientes: () => api.get('/alertas/count/pendientes'),
   getByZona: (zonaId: number) => api.get(`/alertas/zona/${zonaId}`),
+  crearManual: (data: {
+    zonaId: number
+    tipo: string
+    severidad: string
+    descripcion: string
+    empleadoId?: number
+  }) => api.post('/alertas', data),
   atender: (id: number, body?: { notas?: string; empleadoId?: number }) =>
     api.patch(`/alertas/${id}/atender`, body ?? {}),
   descartar: (id: number, body?: { notas?: string; empleadoId?: number }) =>
@@ -86,6 +93,7 @@ export const cosechaService = {
 export const empleadoService = {
   getAll: () => api.get('/empleados'),
   getById: (id: number) => api.get(`/empleados/${id}`),
+  getMe: () => api.get('/empleados/me'),
   create: (data: object) => api.post('/empleados', data),
   update: (id: number, data: object) => api.put(`/empleados/${id}`, data),
   delete: (id: number) => api.delete(`/empleados/${id}`),

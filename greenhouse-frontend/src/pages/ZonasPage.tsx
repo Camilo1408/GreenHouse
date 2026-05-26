@@ -11,6 +11,7 @@ import { zonaService } from '../services/api'
 import toast from 'react-hot-toast'
 import type { Zona } from '../types'
 import { Plus, Pencil, Trash2, LayoutDashboard } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 const emptyZona: Zona = { nombre: '', estado: 'ACTIVA' }
 
@@ -18,6 +19,7 @@ export default function ZonasPage() {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const navigate = useNavigate()
+  const { canWrite, isAdmin } = useAuth()
   const [form, setForm] = useState<Zona>(emptyZona)
   const [editId, setEditId] = useState<number | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -50,12 +52,14 @@ export default function ZonasPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">{t('zona.title')}</h1>
-        <button
-          onClick={() => { setShowForm(true); setForm(emptyZona); setEditId(null) }}
-          className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 text-sm"
-        >
-          <Plus size={16} /> {t('zona.nueva')}
-        </button>
+        {canWrite && (
+          <button
+            onClick={() => { setShowForm(true); setForm(emptyZona); setEditId(null) }}
+            className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 text-sm"
+          >
+            <Plus size={16} /> {t('zona.nueva')}
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -127,8 +131,8 @@ export default function ZonasPage() {
                 <td className="px-4 py-3 text-gray-500">{z.ubicacion ?? '-'}</td>
                 <td className="px-4 py-3 flex gap-2">
                   <button onClick={() => navigate(`/zonas/${z.id}`)} className="text-green-600 hover:text-green-800" title={t('zona.dashboard')}><LayoutDashboard size={15} /></button>
-                  <button onClick={() => startEdit(z)} className="text-blue-600 hover:text-blue-800" title={t('common.edit')}><Pencil size={15} /></button>
-                  <button onClick={() => remove.mutate(z.id!)} className="text-red-500 hover:text-red-700" title={t('common.delete')}><Trash2 size={15} /></button>
+                  {canWrite && <button onClick={() => startEdit(z)} className="text-blue-600 hover:text-blue-800" title={t('common.edit')}><Pencil size={15} /></button>}
+                  {isAdmin && <button onClick={() => remove.mutate(z.id!)} className="text-red-500 hover:text-red-700" title={t('common.delete')}><Trash2 size={15} /></button>}
                 </td>
               </tr>
             ))}

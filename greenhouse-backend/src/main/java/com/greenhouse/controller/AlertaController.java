@@ -10,6 +10,7 @@ import com.greenhouse.service.AlertaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -48,6 +49,19 @@ public class AlertaController {
     @Operation(summary = "Listar alertas por zona")
     public ResponseEntity<List<Alerta>> findByZona(@PathVariable Long zonaId) {
         return ResponseEntity.ok(alertaService.findByZona(zonaId));
+    }
+
+    @PostMapping
+    @Operation(summary = "Crear alerta manual (novedad reportada por empleado/supervisor)")
+    public ResponseEntity<Alerta> crearManual(@RequestBody Map<String, Object> body) {
+        Long zonaId = Long.valueOf(body.get("zonaId").toString());
+        String tipo = (String) body.get("tipo");
+        Alerta.Severidad severidad = Alerta.Severidad.valueOf((String) body.get("severidad"));
+        String descripcion = (String) body.get("descripcion");
+        Long empleadoId = body.get("empleadoId") != null
+                ? Long.valueOf(body.get("empleadoId").toString()) : null;
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(alertaService.crearManual(zonaId, tipo, severidad, descripcion, empleadoId));
     }
 
     @PatchMapping("/{id}/atender")

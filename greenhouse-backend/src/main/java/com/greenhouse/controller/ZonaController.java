@@ -40,14 +40,14 @@ public class ZonaController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','SUPERVISOR')")
     @Operation(summary = "Crear nueva zona")
     public ResponseEntity<Zona> create(@Valid @RequestBody Zona zona) {
         return ResponseEntity.status(HttpStatus.CREATED).body(zonaService.save(zona));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','SUPERVISOR')")
     @Operation(summary = "Actualizar zona existente")
     public ResponseEntity<Zona> update(@PathVariable Long id, @Valid @RequestBody Zona zona) {
         return ResponseEntity.ok(zonaService.update(id, zona));

@@ -10,6 +10,7 @@ import { sensorService, zonaService, lecturaService } from '../services/api'
 import toast from 'react-hot-toast'
 import type { Sensor, Zona } from '../types'
 import { Plus, Pencil, Trash2, Activity, Zap, Thermometer, Droplets, Wind, Sun, FlaskConical } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 type TipoSensor = Sensor['tipoSensor']
 
@@ -122,6 +123,7 @@ const emptySensorForm = {
 export default function SensoresPage() {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const { canWrite, isAdmin } = useAuth()
 
   const [selectedZonaId, setSelectedZonaId] = useState<number | null>(null)
   const [showSensorForm, setShowSensorForm] = useState(false)
@@ -237,12 +239,14 @@ export default function SensoresPage() {
           <Activity className="text-green-600" size={24} />
           {t('sensor.title')}
         </h1>
-        <button
-          onClick={() => { setShowSensorForm(true); setSensorForm(emptySensorForm); setEditSensorId(null) }}
-          className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 text-sm"
-        >
-          <Plus size={16} /> {t('sensor.nuevo')}
-        </button>
+        {canWrite && (
+          <button
+            onClick={() => { setShowSensorForm(true); setSensorForm(emptySensorForm); setEditSensorId(null) }}
+            className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 text-sm"
+          >
+            <Plus size={16} /> {t('sensor.nuevo')}
+          </button>
+        )}
       </div>
 
       {/* Filtro por zona */}
@@ -393,12 +397,16 @@ export default function SensoresPage() {
                     }`}>
                       {t(`sensor.${sensor.estado}`)}
                     </span>
-                    <button onClick={() => startEditSensor(sensor)} className="text-blue-500 hover:text-blue-700 p-1">
-                      <Pencil size={13} />
-                    </button>
-                    <button onClick={() => { if (confirm('¿Eliminar sensor?')) removeSensor.mutate(sensor.id!) }} className="text-red-400 hover:text-red-600 p-1">
-                      <Trash2 size={13} />
-                    </button>
+                    {canWrite && (
+                      <button onClick={() => startEditSensor(sensor)} className="text-blue-500 hover:text-blue-700 p-1">
+                        <Pencil size={13} />
+                      </button>
+                    )}
+                    {isAdmin && (
+                      <button onClick={() => { if (confirm('¿Eliminar sensor?')) removeSensor.mutate(sensor.id!) }} className="text-red-400 hover:text-red-600 p-1">
+                        <Trash2 size={13} />
+                      </button>
+                    )}
                   </div>
                 </div>
 

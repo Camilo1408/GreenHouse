@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -45,18 +46,21 @@ public class SensorController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','SUPERVISOR')")
     @Operation(summary = "Crear nuevo sensor")
     public ResponseEntity<Sensor> create(@Valid @RequestBody Sensor sensor) {
         return ResponseEntity.status(HttpStatus.CREATED).body(sensorService.save(sensor));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','SUPERVISOR')")
     @Operation(summary = "Actualizar sensor")
     public ResponseEntity<Sensor> update(@PathVariable Long id, @Valid @RequestBody Sensor sensor) {
         return ResponseEntity.ok(sensorService.update(id, sensor));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Eliminar sensor")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         sensorService.delete(id);

@@ -10,6 +10,7 @@ import { plantaService, zonaService, tipoPlantaService } from '../services/api'
 import toast from 'react-hot-toast'
 import type { Planta, Zona, TipoPlanta } from '../types'
 import { Plus, Pencil, Trash2, Leaf } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 type PlantaEstado = Planta['estado']
 
@@ -48,6 +49,7 @@ const emptyForm = {
 export default function PlantasPage() {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const { canWrite, isAdmin } = useAuth()
   const [form, setForm] = useState(emptyForm)
   const [editId, setEditId] = useState<number | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -124,12 +126,14 @@ export default function PlantasPage() {
           <Leaf className="text-green-600" size={24} />
           {t('planta.title')}
         </h1>
-        <button
-          onClick={() => { setShowForm(true); setForm(emptyForm); setEditId(null) }}
-          className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 text-sm"
-        >
-          <Plus size={16} /> {t('planta.nueva')}
-        </button>
+        {canWrite && (
+          <button
+            onClick={() => { setShowForm(true); setForm(emptyForm); setEditId(null) }}
+            className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 text-sm"
+          >
+            <Plus size={16} /> {t('planta.nueva')}
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -284,22 +288,26 @@ export default function PlantasPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 flex gap-2">
-                    <button
-                      onClick={() => startEdit(p)}
-                      className="text-blue-600 hover:text-blue-800"
-                      title={t('common.edit')}
-                    >
-                      <Pencil size={15} />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm(`¿Eliminar planta ${p.codigo}?`)) remove.mutate(p.id!)
-                      }}
-                      className="text-red-500 hover:text-red-700"
-                      title={t('common.delete')}
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    {canWrite && (
+                      <button
+                        onClick={() => startEdit(p)}
+                        className="text-blue-600 hover:text-blue-800"
+                        title={t('common.edit')}
+                      >
+                        <Pencil size={15} />
+                      </button>
+                    )}
+                    {isAdmin && (
+                      <button
+                        onClick={() => {
+                          if (confirm(`¿Eliminar planta ${p.codigo}?`)) remove.mutate(p.id!)
+                        }}
+                        className="text-red-500 hover:text-red-700"
+                        title={t('common.delete')}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               )

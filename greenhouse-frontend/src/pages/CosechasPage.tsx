@@ -10,6 +10,7 @@ import { cosechaService, plantaService, empleadoService } from '../services/api'
 import toast from 'react-hot-toast'
 import type { Cosecha, Planta, Empleado } from '../types'
 import { Plus, Wheat } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 type Calidad = Cosecha['calidad']
 type Destino = Cosecha['destino']
@@ -33,6 +34,7 @@ const emptyForm = {
 export default function CosechasPage() {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const { isAdmin } = useAuth()
   const [form, setForm] = useState(emptyForm)
   const [showForm, setShowForm] = useState(false)
 
@@ -46,9 +48,18 @@ export default function CosechasPage() {
     queryFn: () => plantaService.getAll().then(r => r.data),
   })
 
+  // Only admins can pick from the full employee list
   const { data: empleados = [] } = useQuery<Empleado[]>({
     queryKey: ['empleados'],
     queryFn: () => empleadoService.getAll().then(r => r.data),
+    enabled: isAdmin,
+  })
+
+  // Non-admins use their own employee record to auto-populate
+  const { data: miEmpleado } = useQuery<Empleado | null>({
+    queryKey: ['empleados-me'],
+    queryFn: () => empleadoService.getMe().then(r => r.data?.sin_perfil ? null : r.data),
+    enabled: !isAdmin,
   })
 
   const plantasActivas = plantas.filter(
@@ -57,9 +68,13 @@ export default function CosechasPage() {
 
   const registrar = useMutation({
     mutationFn: () => {
+      // Admins pick from dropdown; others use their own employee record
+      const empleadoId = isAdmin
+        ? Number(form.empleadoId)
+        : (miEmpleado?.id ?? Number(form.empleadoId))
       const payload = {
         planta: { id: Number(form.plantaId) },
-        empleado: { id: Number(form.empleadoId) },
+        empleado: { id: empleadoId },
         fechaCosecha: form.fechaCosecha,
         pesoKg: Number(form.pesoKg),
         calidad: form.calidad,
@@ -138,19 +153,30 @@ export default function CosechasPage() {
                 ))}
               </select>
             </div>
-            <div>
-              <label className="text-sm text-gray-600">{t('cosecha.empleado')}</label>
-              <select
-                className="w-full border rounded-lg px-3 py-2 mt-1 text-sm"
-                value={form.empleadoId}
-                onChange={e => setForm({ ...form, empleadoId: e.target.value })}
-              >
-                <option value="">— Seleccionar empleado —</option>
-                {empleados.filter(e => e.estado === 'ACTIVO').map(e => (
-                  <option key={e.id} value={e.id}>{e.nombreCompleto}</option>
-                ))}
-              </select>
-            </div>
+            {isAdmin ? (
+              <div>
+                <label className="text-sm text-gray-600">{t('cosecha.empleado')}</label>
+                <select
+                  className="w-full border rounded-lg px-3 py-2 mt-1 text-sm"
+                  value={form.empleadoId}
+                  onChange={e => setForm({ ...form, empleadoId: e.target.value })}
+                >
+                  <option value="">— Seleccionar empleado —</option>
+                  {empleados.filter(e => e.estado === 'ACTIVO').map(e => (
+                    <option key={e.id} value={e.id}>{e.nombreCompleto}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div>
+                <label className="text-sm text-gray-600">{t('cosecha.empleado')}</label>
+                <input
+                  readOnly
+                  className="w-full border rounded-lg px-3 py-2 mt-1 text-sm bg-gray-50 text-gray-600"
+                  value={miEmpleado?.nombreCompleto ?? 'Sin perfil de empleado'}
+                />
+              </div>
+            )}
             <div>
               <label className="text-sm text-gray-600">{t('cosecha.fecha')}</label>
               <input
@@ -210,7 +236,7 @@ export default function CosechasPage() {
           <div className="flex gap-3 mt-4">
             <button
               onClick={() => registrar.mutate()}
-              disabled={!form.plantaId || !form.empleadoId || !form.pesoKg}
+              disabled={!form.plantaId || (isAdmin ? !form.empleadoId : !miEmpleado) || !form.pesoKg}
               className="bg-green-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-800 disabled:opacity-50"
             >
               {t('common.save')}
