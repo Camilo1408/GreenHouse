@@ -42,7 +42,6 @@ public class LecturaSensor {
     @Column(nullable = false)
     private String unidad;
 
-    @NotNull
     @Column(name = "fecha_hora", nullable = false)
     private LocalDateTime fechaHora;
 

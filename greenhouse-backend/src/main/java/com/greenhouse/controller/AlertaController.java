@@ -44,15 +44,42 @@ public class AlertaController {
         return ResponseEntity.ok(Map.of("total", alertaService.countPendientes()));
     }
 
+    @GetMapping("/zona/{zonaId}")
+    @Operation(summary = "Listar alertas por zona")
+    public ResponseEntity<List<Alerta>> findByZona(@PathVariable Long zonaId) {
+        return ResponseEntity.ok(alertaService.findByZona(zonaId));
+    }
+
     @PatchMapping("/{id}/atender")
-    @Operation(summary = "Marcar alerta como atendida")
-    public ResponseEntity<Alerta> atender(@PathVariable Long id) {
-        return ResponseEntity.ok(alertaService.atender(id));
+    @Operation(summary = "Marcar alerta como atendida, con notas opcionales y empleado responsable")
+    public ResponseEntity<Alerta> atender(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, Object> body) {
+        String notas = body != null ? (String) body.get("notas") : null;
+        Long empleadoId = body != null && body.get("empleadoId") != null
+                ? Long.valueOf(body.get("empleadoId").toString()) : null;
+        return ResponseEntity.ok(alertaService.atender(id, notas, empleadoId));
     }
 
     @PatchMapping("/{id}/descartar")
-    @Operation(summary = "Descartar una alerta")
-    public ResponseEntity<Alerta> descartar(@PathVariable Long id) {
-        return ResponseEntity.ok(alertaService.descartar(id));
+    @Operation(summary = "Descartar una alerta, con notas opcionales")
+    public ResponseEntity<Alerta> descartar(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, Object> body) {
+        String notas = body != null ? (String) body.get("notas") : null;
+        Long empleadoId = body != null && body.get("empleadoId") != null
+                ? Long.valueOf(body.get("empleadoId").toString()) : null;
+        return ResponseEntity.ok(alertaService.descartar(id, notas, empleadoId));
+    }
+
+    @PatchMapping("/{id}/notas")
+    @Operation(summary = "Agregar notas a una alerta (cualquier estado)")
+    public ResponseEntity<Alerta> agregarNotas(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        String notas = (String) body.get("notas");
+        Long empleadoId = body.get("empleadoId") != null
+                ? Long.valueOf(body.get("empleadoId").toString()) : null;
+        return ResponseEntity.ok(alertaService.agregarNotas(id, notas, empleadoId));
     }
 }

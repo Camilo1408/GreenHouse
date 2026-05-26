@@ -16,4 +16,6 @@ import java.util.List;
 public interface LecturaSensorRepository extends JpaRepository<LecturaSensor, Long> {
     List<LecturaSensor> findBySensorId(Long sensorId);
     List<LecturaSensor> findBySensorIdAndFechaHoraBetween(Long sensorId, LocalDateTime inicio, LocalDateTime fin);
+    List<LecturaSensor> findBySensorIdInOrderByFechaHoraDesc(List<Long> sensorIds);
+    List<LecturaSensor> findBySensorIdOrderByFechaHoraDesc(Long sensorId);
 }

@@ -10,12 +10,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   zonaService, plantaService, sensorService,
   cosechaService, tratamientoService, empleadoService,
+  lecturaService, alertaService,
 } from '../services/api'
 import toast from 'react-hot-toast'
-import type { Zona, Planta, Sensor, Cosecha, Tratamiento, Empleado } from '../types'
+import type { Zona, Planta, Sensor, Cosecha, Tratamiento, Empleado, LecturaSensor, Alerta } from '../types'
 import {
   ArrowLeft, Leaf, Wheat, Activity, ClipboardList,
-  Plus, ChevronDown, ChevronUp, Sprout,
+  Plus, ChevronDown, ChevronUp, Sprout, AlertTriangle,
 } from 'lucide-react'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -119,6 +120,18 @@ export default function ZonaDetallePage() {
   const { data: empleados = [] } = useQuery<Empleado[]>({
     queryKey: ['empleados'],
     queryFn: () => empleadoService.getAll().then(r => r.data),
+  })
+
+  const { data: lecturas = [] } = useQuery<LecturaSensor[]>({
+    queryKey: ['lecturas', 'zona', zonaId],
+    queryFn: () => lecturaService.getByZona(zonaId).then(r => r.data),
+    enabled: !!zonaId,
+  })
+
+  const { data: alertasZona = [] } = useQuery<Alerta[]>({
+    queryKey: ['alertas', 'zona', zonaId],
+    queryFn: () => alertaService.getByZona(zonaId).then(r => r.data),
+    enabled: !!zonaId,
   })
 
   // Filter cosechas/tratamientos for this zone's plants
@@ -585,21 +598,123 @@ export default function ZonaDetallePage() {
         )}
       </div>
 
-      {/* Sensores de la zona */}
+      {/* Alertas de la zona */}
+      {alertasZona.filter(a => a.estado === 'PENDIENTE').length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="px-4 py-3 bg-red-50 border-b border-red-100 flex items-center justify-between">
+            <h3 className="font-semibold text-red-700 flex items-center gap-2">
+              <AlertTriangle size={16} />
+              Alertas pendientes ({alertasZona.filter(a => a.estado === 'PENDIENTE').length})
+            </h3>
+            <button
+              onClick={() => navigate('/alertas')}
+              className="text-xs text-red-600 hover:underline"
+            >
+              Gestionar →
+            </button>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {alertasZona.filter(a => a.estado === 'PENDIENTE').map(a => (
+              <div key={a.id} className="px-4 py-2.5 flex items-center gap-3 text-sm">
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                  a.severidad === 'CRITICA' ? 'bg-red-500' :
+                  a.severidad === 'ALTA' ? 'bg-orange-500' :
+                  a.severidad === 'MEDIA' ? 'bg-yellow-400' : 'bg-blue-400'
+                }`} />
+                <span className="font-medium text-gray-700">{a.tipo.replace('UMBRAL_', '')}</span>
+                <span className="text-gray-500 truncate flex-1">{a.descripcion}</span>
+                <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                  a.severidad === 'CRITICA' ? 'bg-red-100 text-red-700' :
+                  a.severidad === 'ALTA' ? 'bg-orange-100 text-orange-700' :
+                  'bg-yellow-100 text-yellow-700'
+                }`}>{a.severidad}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Sensores con estadísticas de lecturas */}
       {sensores.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm p-4">
-          <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
             <Activity size={16} className="text-blue-500" />
             {t('zonaDashboard.sensores')} ({sensores.length})
           </h3>
-          <div className="flex flex-wrap gap-2">
-            {sensores.map(s => (
-              <div key={s.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 text-sm">
-                <span className={`w-2 h-2 rounded-full ${s.estado === 'ACTIVO' ? 'bg-green-500' : 'bg-gray-400'}`} />
-                <span className="font-mono text-xs text-gray-600">{s.codigo}</span>
-                <span className="text-gray-400 text-xs">{s.tipoSensor}</span>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {sensores.map(s => {
+              const sLecturas = lecturas.filter(l => l.sensor?.id === s.id || (l.sensor as any)?.id === s.id)
+              const valores = sLecturas.map(l => l.valor).filter(v => v !== null && v !== undefined)
+              const ultima = sLecturas[0]
+              const minVal = valores.length ? Math.min(...valores) : null
+              const maxVal = valores.length ? Math.max(...valores) : null
+              const avgVal = valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : null
+              const unidad = sLecturas[0]?.unidad ?? ''
+
+              // Check if last reading is out of range
+              const fueraRango = ultima && s.umbralMin != null && s.umbralMax != null
+                ? (ultima.valor < s.umbralMin! || ultima.valor > s.umbralMax!)
+                : false
+
+              return (
+                <div
+                  key={s.id}
+                  className={`rounded-lg border p-3 ${
+                    fueraRango ? 'border-red-200 bg-red-50' :
+                    s.estado === 'ACTIVO' ? 'border-green-100 bg-green-50' :
+                    'border-gray-100 bg-gray-50'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${
+                          fueraRango ? 'bg-red-500' :
+                          s.estado === 'ACTIVO' ? 'bg-green-500' : 'bg-gray-400'
+                        }`} />
+                        <span className="text-xs font-semibold text-gray-700">{s.tipoSensor}</span>
+                      </div>
+                      <span className="font-mono text-xs text-gray-400">{s.codigo}</span>
+                    </div>
+                    {fueraRango && (
+                      <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-medium">
+                        ⚠ Fuera de rango
+                      </span>
+                    )}
+                  </div>
+
+                  {ultima ? (
+                    <>
+                      <div className="text-2xl font-bold text-gray-800 mb-1">
+                        {ultima.valor.toFixed(1)}
+                        <span className="text-sm font-normal text-gray-400 ml-1">{unidad}</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1 text-xs text-center">
+                        <div className="bg-white rounded p-1">
+                          <p className="text-gray-400">Mín</p>
+                          <p className="font-semibold text-blue-600">{minVal?.toFixed(1)}</p>
+                        </div>
+                        <div className="bg-white rounded p-1">
+                          <p className="text-gray-400">Prom</p>
+                          <p className="font-semibold text-gray-700">{avgVal?.toFixed(1)}</p>
+                        </div>
+                        <div className="bg-white rounded p-1">
+                          <p className="text-gray-400">Máx</p>
+                          <p className="font-semibold text-red-500">{maxVal?.toFixed(1)}</p>
+                        </div>
+                      </div>
+                      {s.umbralMin != null && s.umbralMax != null && (
+                        <p className="text-xs text-gray-400 mt-1 text-center">
+                          Umbral: {s.umbralMin}–{s.umbralMax} {unidad}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-xs text-gray-400 italic">Sin lecturas registradas</p>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

@@ -28,7 +28,6 @@ public class EmpleadoController {
     private final EmpleadoService empleadoService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'SUPERVISOR')")
     @Operation(summary = "Listar todos los empleados")
     public ResponseEntity<List<Empleado>> findAll() {
         return ResponseEntity.ok(empleadoService.findAll());

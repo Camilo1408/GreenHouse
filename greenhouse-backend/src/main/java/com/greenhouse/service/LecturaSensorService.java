@@ -31,6 +31,20 @@ public class LecturaSensorService {
         return lecturaRepository.findBySensorId(sensorId);
     }
 
+    /** Retorna las últimas N lecturas de cada sensor en la zona, ordenadas desc. */
+    public List<LecturaSensor> findByZona(Long zonaId) {
+        List<Long> sensorIds = sensorRepository.findByZonaId(zonaId)
+                .stream().map(s -> s.getId()).toList();
+        if (sensorIds.isEmpty()) return List.of();
+        return lecturaRepository.findBySensorIdInOrderByFechaHoraDesc(sensorIds);
+    }
+
+    /** Última lectura de un sensor específico. */
+    public java.util.Optional<LecturaSensor> findLastBySensor(Long sensorId) {
+        List<LecturaSensor> all = lecturaRepository.findBySensorIdOrderByFechaHoraDesc(sensorId);
+        return all.isEmpty() ? java.util.Optional.empty() : java.util.Optional.of(all.get(0));
+    }
+
     public LecturaSensor registrar(LecturaSensor lectura) {
         Sensor sensor = sensorRepository.findById(lectura.getSensor().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Sensor no encontrado con id: " + lectura.getSensor().getId()));

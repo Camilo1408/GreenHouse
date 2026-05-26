@@ -75,6 +75,8 @@ export interface Alerta {
   fechaGeneracion: string
   estado: 'PENDIENTE' | 'ATENDIDA' | 'DESCARTADA'
   descripcion?: string
+  notasResolucion?: string
+  atendidoPor?: { id: number; nombreCompleto?: string }
 }
 
 export interface Cosecha {

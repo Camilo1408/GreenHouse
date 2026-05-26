@@ -59,12 +59,18 @@ export const alertaService = {
   getAll: () => api.get('/alertas'),
   getPendientes: () => api.get('/alertas/pendientes'),
   countPendientes: () => api.get('/alertas/count/pendientes'),
-  atender: (id: number) => api.patch(`/alertas/${id}/atender`),
-  descartar: (id: number) => api.patch(`/alertas/${id}/descartar`),
+  getByZona: (zonaId: number) => api.get(`/alertas/zona/${zonaId}`),
+  atender: (id: number, body?: { notas?: string; empleadoId?: number }) =>
+    api.patch(`/alertas/${id}/atender`, body ?? {}),
+  descartar: (id: number, body?: { notas?: string; empleadoId?: number }) =>
+    api.patch(`/alertas/${id}/descartar`, body ?? {}),
+  agregarNotas: (id: number, body: { notas: string; empleadoId?: number }) =>
+    api.patch(`/alertas/${id}/notas`, body),
 }
 
 export const lecturaService = {
   getBySensor: (sensorId: number) => api.get(`/lecturas/sensor/${sensorId}`),
+  getByZona: (zonaId: number) => api.get(`/lecturas/zona/${zonaId}`),
   registrar: (data: object) => api.post('/lecturas', data),
 }
 

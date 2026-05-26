@@ -32,6 +32,12 @@ public class LecturaSensorController {
         return ResponseEntity.ok(lecturaService.findBySensor(sensorId));
     }
 
+    @GetMapping("/zona/{zonaId}")
+    @Operation(summary = "Obtener todas las lecturas de los sensores de una zona")
+    public ResponseEntity<List<LecturaSensor>> findByZona(@PathVariable Long zonaId) {
+        return ResponseEntity.ok(lecturaService.findByZona(zonaId));
+    }
+
     @PostMapping
     @Operation(summary = "Registrar nueva lectura (genera alerta si está fuera de umbral)")
     public ResponseEntity<LecturaSensor> registrar(@Valid @RequestBody LecturaSensor lectura) {

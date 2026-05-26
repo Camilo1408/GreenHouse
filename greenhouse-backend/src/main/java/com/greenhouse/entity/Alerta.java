@@ -59,6 +59,16 @@ public class Alerta {
     @Size(max = 500)
     private String descripcion;
 
+    /** Notas de resolución agregadas por el empleado que atendió la alerta. */
+    @Size(max = 1000)
+    @Column(name = "notas_resolucion")
+    private String notasResolucion;
+
+    /** Empleado que atendió o resolvió la alerta. */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "atendido_por_id")
+    private Empleado atendidoPor;
+
     public enum Severidad {
         BAJA, MEDIA, ALTA, CRITICA
     }
