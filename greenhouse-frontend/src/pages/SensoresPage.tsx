@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { sensorService, zonaService, lecturaService } from '../services/api'
 import toast from 'react-hot-toast'
-import type { Sensor, Zona, LecturaSensor } from '../types'
+import type { Sensor, Zona } from '../types'
 import { Plus, Pencil, Trash2, Activity, Zap, Thermometer, Droplets, Wind, Sun, FlaskConical } from 'lucide-react'
 
 type TipoSensor = Sensor['tipoSensor']
