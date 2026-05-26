@@ -5,8 +5,8 @@
  */
 package com.greenhouse.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -22,7 +22,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "passwordHash"})
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Empleado {
 
     @Id
@@ -40,7 +40,7 @@ public class Empleado {
     private String email;
 
     /** Contraseña hasheada con BCrypt. Null si el usuario se registró con Google. */
-    @JsonIgnore
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "password_hash")
     private String passwordHash;
 

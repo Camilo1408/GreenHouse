@@ -9,6 +9,7 @@ import com.greenhouse.entity.Empleado;
 import com.greenhouse.exception.ResourceNotFoundException;
 import com.greenhouse.repository.EmpleadoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -22,6 +23,7 @@ import java.util.List;
 public class EmpleadoService {
 
     private final EmpleadoRepository empleadoRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public List<Empleado> findAll() {
         return empleadoRepository.findAll();
@@ -40,6 +42,15 @@ public class EmpleadoService {
     public Empleado save(Empleado empleado) {
         if (empleadoRepository.existsByEmail(empleado.getEmail())) {
             throw new IllegalArgumentException("Ya existe un empleado con el email: " + empleado.getEmail());
+        }
+        // Encode password if provided as plain text
+        if (empleado.getPasswordHash() != null && !empleado.getPasswordHash().isBlank()) {
+            empleado.setPasswordHash(passwordEncoder.encode(empleado.getPasswordHash()));
+        }
+        // Set defaults for admin-created employees
+        empleado.setEmailVerificado(true);
+        if (empleado.getAuthProvider() == null) {
+            empleado.setAuthProvider(Empleado.AuthProvider.LOCAL);
         }
         return empleadoRepository.save(empleado);
     }

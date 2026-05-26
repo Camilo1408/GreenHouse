@@ -38,6 +38,23 @@ export const plantaService = {
   delete: (id: number) => api.delete(`/plantas/${id}`),
 }
 
+export const tipoPlantaService = {
+  getAll: () => api.get('/tipos-planta'),
+  getById: (id: number) => api.get(`/tipos-planta/${id}`),
+  create: (data: object) => api.post('/tipos-planta', data),
+  update: (id: number, data: object) => api.put(`/tipos-planta/${id}`, data),
+  delete: (id: number) => api.delete(`/tipos-planta/${id}`),
+}
+
+export const sensorService = {
+  getAll: () => api.get('/sensores'),
+  getById: (id: number) => api.get(`/sensores/${id}`),
+  getByZona: (zonaId: number) => api.get(`/sensores/zona/${zonaId}`),
+  create: (data: object) => api.post('/sensores', data),
+  update: (id: number, data: object) => api.put(`/sensores/${id}`, data),
+  delete: (id: number) => api.delete(`/sensores/${id}`),
+}
+
 export const alertaService = {
   getAll: () => api.get('/alertas'),
   getPendientes: () => api.get('/alertas/pendientes'),
@@ -66,6 +83,14 @@ export const empleadoService = {
   create: (data: object) => api.post('/empleados', data),
   update: (id: number, data: object) => api.put(`/empleados/${id}`, data),
   delete: (id: number) => api.delete(`/empleados/${id}`),
+}
+
+export const tratamientoService = {
+  getAll: () => api.get('/tratamientos'),
+  getByPlanta: (plantaId: number) => api.get(`/tratamientos/planta/${plantaId}`),
+  create: (data: object) => api.post('/tratamientos', data),
+  update: (id: number, data: object) => api.put(`/tratamientos/${id}`, data),
+  delete: (id: number) => api.delete(`/tratamientos/${id}`),
 }
 
 export default api

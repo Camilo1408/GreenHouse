@@ -6,7 +6,7 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
-  LayoutDashboard, Map, Leaf, Bell, Wheat, Users, LogOut, Globe
+  LayoutDashboard, Map, Leaf, Bell, Wheat, Users, LogOut, Globe, Activity
 } from 'lucide-react'
 
 export default function Layout() {
@@ -18,7 +18,7 @@ export default function Layout() {
 
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:8080/api/auth/logout', {
+      await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
       })
@@ -33,6 +33,7 @@ export default function Layout() {
     { to: '/dashboard', icon: <LayoutDashboard size={18} />, label: t('nav.dashboard') },
     { to: '/zonas',     icon: <Map size={18} />,             label: t('nav.zonas') },
     { to: '/plantas',   icon: <Leaf size={18} />,            label: t('nav.plantas') },
+    { to: '/sensores',  icon: <Activity size={18} />,        label: t('nav.sensores') },
     { to: '/alertas',   icon: <Bell size={18} />,            label: t('nav.alertas') },
     { to: '/cosechas',  icon: <Wheat size={18} />,           label: t('nav.cosechas') },
     { to: '/empleados', icon: <Users size={18} />,           label: t('nav.empleados') },

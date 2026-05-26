@@ -28,8 +28,8 @@ export interface Zona {
 export interface Planta {
   id?: number
   codigo: string
-  tipoPlanta: { id: number }
-  zona: { id: number }
+  tipoPlanta: { id: number; nombre?: string; cicloDias?: number }
+  zona: { id: number; nombre?: string }
   fechaSiembra: string
   estado: 'SEMBRADA' | 'EN_CRECIMIENTO' | 'LISTA_PARA_COSECHAR' | 'COSECHADA' | 'MUERTA'
   observaciones?: string
@@ -39,6 +39,7 @@ export interface Empleado {
   id?: number
   nombreCompleto: string
   email: string
+  passwordHash?: string
   rol: 'ADMINISTRADOR' | 'EMPLEADO' | 'SUPERVISOR'
   telefono?: string
   estado: 'ACTIVO' | 'INACTIVO'
@@ -49,7 +50,7 @@ export interface Sensor {
   id?: number
   codigo: string
   tipoSensor: 'TEMPERATURA' | 'HUMEDAD' | 'PH' | 'CO2' | 'LUZ'
-  zona: { id: number }
+  zona: { id: number; nombre?: string }
   estado: 'ACTIVO' | 'INACTIVO' | 'EN_MANTENIMIENTO'
   fechaInstalacion?: string
   umbralMin?: number
@@ -58,7 +59,7 @@ export interface Sensor {
 
 export interface LecturaSensor {
   id?: number
-  sensor: { id: number }
+  sensor: { id: number; codigo?: string; tipoSensor?: string }
   valor: number
   unidad: string
   fechaHora?: string
@@ -78,13 +79,24 @@ export interface Alerta {
 
 export interface Cosecha {
   id?: number
-  planta: { id: number }
-  empleado: { id: number }
+  planta: { id: number; codigo?: string; tipoPlanta?: { nombre?: string } }
+  empleado: { id: number; nombreCompleto?: string }
   fechaCosecha: string
   pesoKg: number
   calidad: 'A' | 'B' | 'C'
   destino: 'VENTA' | 'CONSUMO_INTERNO' | 'DESCARTE'
   observaciones?: string
+}
+
+export interface Tratamiento {
+  id?: number
+  planta: { id: number; codigo?: string }
+  empleado: { id: number; nombreCompleto?: string }
+  tipoTratamiento: 'FERTILIZACION' | 'PESTICIDA' | 'PODA' | 'RIEGO_MANUAL' | 'REVISION'
+  productoUtilizado?: string
+  dosis?: string
+  fechaHora: string
+  resultadoObservado?: string
 }
 
 export interface Turno {

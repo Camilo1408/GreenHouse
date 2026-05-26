@@ -6,16 +6,18 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { zonaService } from '../services/api'
 import toast from 'react-hot-toast'
 import type { Zona } from '../types'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, LayoutDashboard } from 'lucide-react'
 
 const emptyZona: Zona = { nombre: '', estado: 'ACTIVA' }
 
 export default function ZonasPage() {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const [form, setForm] = useState<Zona>(emptyZona)
   const [editId, setEditId] = useState<number | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -124,8 +126,9 @@ export default function ZonasPage() {
                 </td>
                 <td className="px-4 py-3 text-gray-500">{z.ubicacion ?? '-'}</td>
                 <td className="px-4 py-3 flex gap-2">
-                  <button onClick={() => startEdit(z)} className="text-blue-600 hover:text-blue-800"><Pencil size={15} /></button>
-                  <button onClick={() => remove.mutate(z.id!)} className="text-red-500 hover:text-red-700"><Trash2 size={15} /></button>
+                  <button onClick={() => navigate(`/zonas/${z.id}`)} className="text-green-600 hover:text-green-800" title={t('zona.dashboard')}><LayoutDashboard size={15} /></button>
+                  <button onClick={() => startEdit(z)} className="text-blue-600 hover:text-blue-800" title={t('common.edit')}><Pencil size={15} /></button>
+                  <button onClick={() => remove.mutate(z.id!)} className="text-red-500 hover:text-red-700" title={t('common.delete')}><Trash2 size={15} /></button>
                 </td>
               </tr>
             ))}

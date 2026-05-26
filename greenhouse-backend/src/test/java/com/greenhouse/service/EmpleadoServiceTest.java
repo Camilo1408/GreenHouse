@@ -101,12 +101,13 @@ class EmpleadoServiceTest {
     @DisplayName("save con email nuevo debe persistir el empleado")
     void save_emailNuevo_debePersistir() {
         when(empleadoRepository.existsByEmail("juan@greenhouse.com")).thenReturn(false);
-        when(empleadoRepository.save(empleadoBasico)).thenReturn(empleadoBasico);
+        when(passwordEncoder.encode(any())).thenReturn("$2a$10$encoded_in_test");
+        when(empleadoRepository.save(any(Empleado.class))).thenReturn(empleadoBasico);
 
         Empleado resultado = empleadoService.save(empleadoBasico);
 
         assertThat(resultado.getNombreCompleto()).isEqualTo("Juan Pérez");
-        verify(empleadoRepository).save(empleadoBasico);
+        verify(empleadoRepository).save(any(Empleado.class));
     }
 
     @Test
