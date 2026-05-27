@@ -61,8 +61,8 @@ class TestRBACUI:
         """
         import sys, os
         sys.path.insert(0, os.path.dirname(__file__))
-        from conftest import get_driver
-        isolated_driver = get_driver(headless=True)
+        from conftest import get_driver, HEADLESS
+        isolated_driver = get_driver(headless=HEADLESS)
         isolated_driver.implicitly_wait(10)
         try:
             isolated_driver.get(f"{BASE_URL}/dashboard")
@@ -124,11 +124,11 @@ class TestRBACUI:
         import sys
         import os
         sys.path.insert(0, os.path.dirname(__file__))
-        from conftest import get_driver, BASE_URL, ADMIN_EMAIL, ADMIN_PASSWORD
+        from conftest import get_driver, HEADLESS, BASE_URL, ADMIN_EMAIL, ADMIN_PASSWORD
         from selenium.webdriver.support.ui import WebDriverWait
         from selenium.webdriver.support import expected_conditions as EC
 
-        isolated_driver = get_driver(headless=True)
+        isolated_driver = get_driver(headless=HEADLESS)
         isolated_driver.implicitly_wait(10)
         try:
             # Login

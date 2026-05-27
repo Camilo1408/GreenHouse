@@ -3,8 +3,9 @@ GreenHouse Manager — Configuración de Selenium
 Autores: [Nombres del equipo]
 Fecha: 2026
 
-Fixture compartida que levanta Chrome en modo headless y
-navega a la URL base del frontend antes de cada test.
+Fixture compartida que levanta Chrome con ventana visible para poder
+observar las pruebas en ejecucion. Reutiliza el mismo driver en toda
+la sesion para mayor velocidad.
 """
 
 import os
@@ -17,19 +18,24 @@ BASE_URL       = "http://localhost:5173"
 ADMIN_EMAIL    = "admin@greenhouse.com"
 ADMIN_PASSWORD = "Admin1234"
 
+# Cambiar a True solo en CI/GitHub Actions; False = ventana visible localmente
+HEADLESS = os.environ.get("CI", "").lower() in ("true", "1", "yes")
 
-def get_driver(headless: bool = True) -> webdriver.Chrome:
-    """Instancia Chrome con opciones para CI (headless) o local (con ventana)."""
+
+def get_driver(headless: bool = False) -> webdriver.Chrome:
+    """Instancia Chrome. Sin headless: ventana visible para revisar las pruebas."""
     options = Options()
     if headless:
         options.add_argument("--headless=new")
+        options.add_argument("--disable-gpu")
+
+    # Flags estables en Windows (sin remote-debugging-port para evitar conflictos)
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--window-size=1280,800")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--remote-debugging-port=9222")
+    options.add_argument("--window-size=1400,900")
+    options.add_argument("--start-maximized")
 
-    # En CI (GitHub Actions) usa el chromedriver del sistema; localmente usa webdriver-manager
+    # En CI usa el chromedriver del PATH; localmente descarga con webdriver-manager
     chrome_driver_path = os.environ.get("CHROMEDRIVER_PATH", "")
     if chrome_driver_path:
         service = Service(executable_path=chrome_driver_path)
@@ -46,10 +52,11 @@ def get_driver(headless: bool = True) -> webdriver.Chrome:
 @pytest.fixture(scope="session")
 def driver():
     """
-    Driver de sesión: se crea UNA sola vez y se reutiliza en todos los tests.
-    Al terminar la suite, el navegador se cierra.
+    Driver de sesion: se crea UNA sola vez y se reutiliza en todos los tests.
+    Corre con ventana visible (no headless) para poder observar las pruebas.
+    Al terminar la suite, el navegador se cierra automaticamente.
     """
-    drv = get_driver(headless=True)
+    drv = get_driver(headless=HEADLESS)
     drv.implicitly_wait(10)
     yield drv
     drv.quit()
