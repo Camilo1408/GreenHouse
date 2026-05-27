@@ -2,9 +2,42 @@
   "$schema": "https://json-schema.org/draft/2020-12",
   "title": "GreenHouse Manager — Modelo de Datos JSON",
   "description": "Esquema completo de las entidades del sistema de gestión de invernaderos",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "authors": ["[Nombres del equipo]"],
   "date": "2026",
+  "changelog": [
+    "v2.0.0 — Alerta: añadidos atendidoPor, notasResolucion y origen MANUAL/AUTOMATICA",
+    "v2.0.0 — POST /api/alertas para creación manual (novedades de falla en zona)",
+    "v2.0.0 — GET /api/empleados/me accesible a todos los roles autenticados",
+    "v2.0.0 — RBAC: ADMINISTRADOR, SUPERVISOR, EMPLEADO con permisos diferenciados",
+    "v2.0.0 — Tratamiento.tipoTratamiento: añadido REVISION para novedades de enfermedad",
+    "v2.0.0 — Sensor: umbralMin/umbralMax para generación automática de alertas"
+  ],
+
+  "roles": {
+    "ADMINISTRADOR": {
+      "description": "Acceso completo a todas las funciones del sistema",
+      "permissions": ["CREATE", "READ", "UPDATE", "DELETE"],
+      "exclusive_access": ["Empleados (listado completo)", "DELETE en todas las entidades"]
+    },
+    "SUPERVISOR": {
+      "description": "Puede crear y editar entidades pero no eliminar",
+      "permissions": ["CREATE", "READ", "UPDATE"],
+      "denied": ["DELETE en cualquier entidad", "Gestión de empleados"]
+    },
+    "EMPLEADO": {
+      "description": "Acceso operativo: cosechas, alertas, novedades",
+      "permissions": ["READ"],
+      "additional": [
+        "PATCH /api/alertas/{id}/atender — cambiar estado de alerta",
+        "PATCH /api/alertas/{id}/descartar — descartar alerta",
+        "POST /api/cosechas — registrar cosecha propia",
+        "POST /api/tratamientos — reportar novedad de enfermedad",
+        "POST /api/alertas — reportar novedad de falla en zona",
+        "GET /api/empleados/me — consultar su propio perfil"
+      ]
+    }
+  },
 
   "entities": {
 
@@ -20,6 +53,12 @@
         "ubicacion":           { "type": "string",  "maxLength": 200, "description": "Descripción física del sector" }
       },
       "required": ["nombre", "estado"],
+      "rbac": {
+        "CREATE": "ADMINISTRADOR, SUPERVISOR",
+        "READ":   "todos los roles",
+        "UPDATE": "ADMINISTRADOR, SUPERVISOR",
+        "DELETE": "ADMINISTRADOR"
+      },
       "example": {
         "id": 1,
         "nombre": "Zona A - Tomates",
@@ -45,6 +84,12 @@
         "cuidadosEspeciales": { "type": "string", "maxLength": 500 }
       },
       "required": ["nombre", "temperaturaMin", "temperaturaMax", "humedadMin", "humedadMax", "cicloDias"],
+      "rbac": {
+        "CREATE": "ADMINISTRADOR, SUPERVISOR",
+        "READ":   "todos los roles",
+        "UPDATE": "ADMINISTRADOR, SUPERVISOR",
+        "DELETE": "ADMINISTRADOR"
+      },
       "example": {
         "id": 1,
         "nombre": "Tomate Cherry",
@@ -74,6 +119,13 @@
       },
       "required": ["nombreCompleto", "email", "rol"],
       "note": "passwordHash se omite del JSON por seguridad",
+      "rbac": {
+        "CREATE": "ADMINISTRADOR",
+        "READ (listado)": "ADMINISTRADOR",
+        "READ (propio, /me)": "todos los roles autenticados",
+        "UPDATE": "ADMINISTRADOR",
+        "DELETE": "ADMINISTRADOR"
+      },
       "example": {
         "id": 1,
         "nombreCompleto": "Carlos Administrador",
@@ -100,6 +152,12 @@
         "observaciones":{ "type": "string",  "maxLength": 500 }
       },
       "required": ["codigo", "tipoPlanta", "zona", "fechaSiembra", "estado"],
+      "rbac": {
+        "CREATE": "ADMINISTRADOR, SUPERVISOR",
+        "READ":   "todos los roles",
+        "UPDATE": "ADMINISTRADOR, SUPERVISOR",
+        "DELETE": "ADMINISTRADOR"
+      },
       "example": {
         "id": 1,
         "codigo": "TOM-001",
@@ -121,10 +179,16 @@
         "zona":             { "$ref": "#/entities/Zona" },
         "estado":           { "type": "string", "enum": ["ACTIVO", "INACTIVO", "EN_MANTENIMIENTO"], "default": "ACTIVO" },
         "fechaInstalacion": { "type": "string", "format": "date" },
-        "umbralMin":        { "type": "number", "description": "Valor mínimo aceptable" },
-        "umbralMax":        { "type": "number", "description": "Valor máximo aceptable" }
+        "umbralMin":        { "type": "number", "description": "Valor mínimo aceptable. Lecturas por debajo generan alerta automática." },
+        "umbralMax":        { "type": "number", "description": "Valor máximo aceptable. Lecturas por encima generan alerta automática." }
       },
       "required": ["codigo", "tipoSensor", "zona"],
+      "rbac": {
+        "CREATE": "ADMINISTRADOR, SUPERVISOR",
+        "READ":   "todos los roles",
+        "UPDATE": "ADMINISTRADOR, SUPERVISOR",
+        "DELETE": "ADMINISTRADOR"
+      },
       "example": {
         "id": 1,
         "codigo": "SENS-TA-01",
@@ -139,7 +203,7 @@
 
     "LecturaSensor": {
       "table": "lectura_sensor",
-      "description": "Medición puntual registrada por un sensor en un momento dado",
+      "description": "Medición puntual registrada por un sensor en un momento dado. Si el valor supera umbralMin/umbralMax del sensor, se genera una Alerta automáticamente.",
       "properties": {
         "id":        { "type": "integer" },
         "sensor":    { "$ref": "#/entities/Sensor" },
@@ -161,19 +225,28 @@
 
     "Alerta": {
       "table": "alerta",
-      "description": "Aviso automático generado cuando una lectura supera los umbrales del sensor",
+      "description": "Aviso generado automáticamente cuando una lectura supera los umbrales del sensor, o manualmente por un empleado para reportar una falla de sistema en zona (novedad).",
       "properties": {
-        "id":              { "type": "integer" },
-        "tipo":            { "type": "string",  "maxLength": 200, "description": "Categoría del evento (ej: UMBRAL_TEMPERATURA)" },
-        "severidad":       { "type": "string",  "enum": ["BAJA", "MEDIA", "ALTA", "CRITICA"] },
-        "zona":            { "$ref": "#/entities/Zona" },
-        "sensor":          { "$ref": "#/entities/Sensor" },
-        "fechaGeneracion": { "type": "string",  "format": "date-time" },
-        "estado":          { "type": "string",  "enum": ["PENDIENTE", "ATENDIDA", "DESCARTADA"], "default": "PENDIENTE" },
-        "descripcion":     { "type": "string",  "maxLength": 500 }
+        "id":               { "type": "integer" },
+        "tipo":             { "type": "string",  "maxLength": 200, "description": "Categoría del evento (ej: UMBRAL_TEMPERATURA, FALLA_SISTEMA, FALLA_REFRIGERACION)" },
+        "severidad":        { "type": "string",  "enum": ["BAJA", "MEDIA", "ALTA", "CRITICA"] },
+        "zona":             { "$ref": "#/entities/Zona" },
+        "sensor":           { "$ref": "#/entities/Sensor", "nullable": true, "description": "null para alertas manuales (novedades)" },
+        "fechaGeneracion":  { "type": "string",  "format": "date-time" },
+        "estado":           { "type": "string",  "enum": ["PENDIENTE", "ATENDIDA", "DESCARTADA"], "default": "PENDIENTE" },
+        "descripcion":      { "type": "string",  "maxLength": 500 },
+        "atendidoPor":      { "$ref": "#/entities/Empleado", "nullable": true, "description": "Empleado que gestionó la alerta" },
+        "notasResolucion":  { "type": ["string", "null"], "maxLength": 1000, "description": "Notas de resolución o descarte escritas por el empleado responsable" },
+        "origen":           { "type": "string",  "enum": ["AUTOMATICA", "MANUAL"], "default": "AUTOMATICA", "description": "MANUAL indica que es una novedad reportada por un empleado" }
       },
       "required": ["tipo", "severidad", "zona", "fechaGeneracion"],
-      "example": {
+      "rbac": {
+        "CREATE (manual)": "todos los roles autenticados",
+        "READ":   "todos los roles",
+        "PATCH atender/descartar": "todos los roles autenticados",
+        "DELETE": "ADMINISTRADOR"
+      },
+      "example_automatica": {
         "id": 1,
         "tipo": "UMBRAL_TEMPERATURA",
         "severidad": "ALTA",
@@ -181,7 +254,23 @@
         "sensor": { "id": 1, "codigo": "SENS-TA-01" },
         "fechaGeneracion": "2026-05-16T20:00:00",
         "estado": "PENDIENTE",
-        "descripcion": "Sensor SENS-TA-01 en Zona A: temperatura 31.0°C supera el máximo de 28.0°C"
+        "descripcion": "Sensor SENS-TA-01 en Zona A: temperatura 31.0°C supera el máximo de 28.0°C",
+        "atendidoPor": null,
+        "notasResolucion": null,
+        "origen": "AUTOMATICA"
+      },
+      "example_manual_novedad": {
+        "id": 42,
+        "tipo": "FALLA_REFRIGERACION",
+        "severidad": "CRITICA",
+        "zona": { "id": 2, "nombre": "Zona B - Lechugas" },
+        "sensor": null,
+        "fechaGeneracion": "2026-05-27T09:30:00",
+        "estado": "PENDIENTE",
+        "descripcion": "El sistema de refrigeración de la Zona B no responde. Temperatura subiendo.",
+        "atendidoPor": null,
+        "notasResolucion": null,
+        "origen": "MANUAL"
       }
     },
 
@@ -194,11 +283,17 @@
         "empleado":      { "$ref": "#/entities/Empleado" },
         "fechaCosecha":  { "type": "string", "format": "date" },
         "pesoKg":        { "type": "number", "minimum": 0.01 },
-        "calidad":       { "type": "string", "enum": ["A", "B", "C"] },
+        "calidad":       { "type": "string", "enum": ["A", "B", "C"], "description": "A=Premium, B=Estándar, C=Descarte" },
         "destino":       { "type": "string", "enum": ["VENTA", "CONSUMO_INTERNO", "DESCARTE"] },
         "observaciones": { "type": "string", "maxLength": 500 }
       },
       "required": ["planta", "empleado", "fechaCosecha", "pesoKg", "calidad", "destino"],
+      "rbac": {
+        "CREATE": "todos los roles autenticados",
+        "READ":   "todos los roles",
+        "UPDATE": "ADMINISTRADOR, SUPERVISOR",
+        "DELETE": "ADMINISTRADOR"
+      },
       "example": {
         "id": 1,
         "planta": { "id": 5, "codigo": "TOM-005" },
@@ -213,27 +308,33 @@
 
     "Tratamiento": {
       "table": "tratamiento",
-      "description": "Intervención aplicada a una planta (fertilización, poda, pesticida, etc.)",
+      "description": "Intervención aplicada a una planta. El tipo REVISION se usa para reportar novedades de enfermedad (requiere descripción de síntomas en resultadoObservado).",
       "properties": {
         "id":                 { "type": "integer" },
         "planta":             { "$ref": "#/entities/Planta" },
         "empleado":           { "$ref": "#/entities/Empleado" },
-        "tipoTratamiento":    { "type": "string", "enum": ["FERTILIZACION", "PESTICIDA", "PODA", "RIEGO_MANUAL", "REVISION"] },
+        "tipoTratamiento":    { "type": "string", "enum": ["FERTILIZACION", "PESTICIDA", "PODA", "RIEGO_MANUAL", "REVISION"], "description": "REVISION = novedad de enfermedad reportada por empleado" },
         "productoUtilizado":  { "type": "string", "maxLength": 150 },
         "dosis":              { "type": "string", "maxLength": 100 },
         "fechaHora":          { "type": "string", "format": "date-time" },
-        "resultadoObservado": { "type": "string", "maxLength": 500 }
+        "resultadoObservado": { "type": "string", "maxLength": 500, "description": "Descripción de síntomas para novedades de tipo REVISION" }
       },
       "required": ["planta", "empleado", "tipoTratamiento", "fechaHora"],
+      "rbac": {
+        "CREATE": "todos los roles autenticados",
+        "READ":   "todos los roles",
+        "UPDATE": "ADMINISTRADOR, SUPERVISOR",
+        "DELETE": "ADMINISTRADOR"
+      },
       "example": {
         "id": 1,
         "planta": { "id": 1, "codigo": "TOM-001" },
         "empleado": { "id": 3, "nombreCompleto": "Juan Pérez" },
-        "tipoTratamiento": "FERTILIZACION",
-        "productoUtilizado": "Nitrofoska",
-        "dosis": "5g/L",
-        "fechaHora": "2026-05-09T08:00:00",
-        "resultadoObservado": "Mejora visible en color de hojas"
+        "tipoTratamiento": "REVISION",
+        "productoUtilizado": "",
+        "dosis": "",
+        "fechaHora": "2026-05-27T09:15:00",
+        "resultadoObservado": "Manchas amarillas en hojas inferiores — posible deficiencia de nitrógeno"
       }
     },
 
@@ -249,6 +350,12 @@
         "actividadesRealizadas":{ "type": "string", "maxLength": 1000 }
       },
       "required": ["empleado", "zona", "fechaHoraInicio"],
+      "rbac": {
+        "CREATE": "ADMINISTRADOR, SUPERVISOR",
+        "READ":   "todos los roles",
+        "UPDATE": "ADMINISTRADOR, SUPERVISOR",
+        "DELETE": "ADMINISTRADOR"
+      },
       "example": {
         "id": 1,
         "empleado": { "id": 3, "nombreCompleto": "Juan Pérez" },
@@ -261,7 +368,7 @@
   },
 
   "api_endpoints": {
-    "auth":     [
+    "auth": [
       "POST /api/auth/register",
       "GET  /api/auth/verify?token={token}",
       "POST /api/auth/login",
@@ -269,12 +376,85 @@
       "GET  /api/auth/me",
       "POST /api/auth/resend-verification?email={email}"
     ],
-    "zonas":    ["GET /api/zonas", "GET /api/zonas/{id}", "POST /api/zonas", "PUT /api/zonas/{id}", "DELETE /api/zonas/{id}"],
-    "plantas":  ["GET /api/plantas", "GET /api/plantas/{id}", "GET /api/plantas/zona/{zonaId}", "GET /api/plantas/estado/{estado}", "POST /api/plantas", "PUT /api/plantas/{id}", "DELETE /api/plantas/{id}"],
-    "alertas":  ["GET /api/alertas", "GET /api/alertas/pendientes", "GET /api/alertas/count/pendientes", "PATCH /api/alertas/{id}/atender", "PATCH /api/alertas/{id}/descartar"],
-    "cosechas": ["GET /api/cosechas", "GET /api/cosechas/periodo?inicio={}&fin={}", "GET /api/cosechas/estadisticas/mes?year={}&month={}", "POST /api/cosechas"],
-    "empleados":["GET /api/empleados", "GET /api/empleados/{id}", "POST /api/empleados", "PUT /api/empleados/{id}", "DELETE /api/empleados/{id}"],
-    "lecturas": ["GET /api/lecturas/sensor/{sensorId}", "POST /api/lecturas"],
-    "tipos-planta": ["GET /api/tipos-planta", "GET /api/tipos-planta/{id}", "POST /api/tipos-planta", "PUT /api/tipos-planta/{id}", "DELETE /api/tipos-planta/{id}"]
+    "zonas": [
+      "GET    /api/zonas",
+      "GET    /api/zonas/{id}",
+      "POST   /api/zonas                   [ADMIN, SUPERVISOR]",
+      "PUT    /api/zonas/{id}              [ADMIN, SUPERVISOR]",
+      "DELETE /api/zonas/{id}             [ADMIN]"
+    ],
+    "plantas": [
+      "GET    /api/plantas",
+      "GET    /api/plantas/{id}",
+      "GET    /api/plantas/zona/{zonaId}",
+      "GET    /api/plantas/estado/{estado}",
+      "POST   /api/plantas                 [ADMIN, SUPERVISOR]",
+      "PUT    /api/plantas/{id}            [ADMIN, SUPERVISOR]",
+      "DELETE /api/plantas/{id}           [ADMIN]"
+    ],
+    "alertas": [
+      "GET    /api/alertas",
+      "GET    /api/alertas/pendientes",
+      "GET    /api/alertas/count/pendientes",
+      "POST   /api/alertas                 [todos los roles — novedad de falla en zona]",
+      "PATCH  /api/alertas/{id}/atender    [todos los roles — cuerpo: {notas?}]",
+      "PATCH  /api/alertas/{id}/descartar  [todos los roles — cuerpo: {notas?}]"
+    ],
+    "cosechas": [
+      "GET  /api/cosechas",
+      "GET  /api/cosechas/periodo?inicio={}&fin={}",
+      "GET  /api/cosechas/estadisticas/mes?year={}&month={}",
+      "POST /api/cosechas                  [todos los roles autenticados]"
+    ],
+    "empleados": [
+      "GET    /api/empleados               [ADMIN]",
+      "GET    /api/empleados/{id}          [ADMIN]",
+      "GET    /api/empleados/me            [todos los roles autenticados]",
+      "POST   /api/empleados               [ADMIN]",
+      "PUT    /api/empleados/{id}          [ADMIN]",
+      "DELETE /api/empleados/{id}         [ADMIN]"
+    ],
+    "tratamientos": [
+      "GET    /api/tratamientos",
+      "GET    /api/tratamientos/planta/{plantaId}",
+      "POST   /api/tratamientos            [todos los roles — para novedades REVISION]",
+      "PUT    /api/tratamientos/{id}       [ADMIN, SUPERVISOR]",
+      "DELETE /api/tratamientos/{id}      [ADMIN]"
+    ],
+    "sensores": [
+      "GET    /api/sensores",
+      "GET    /api/sensores/{id}",
+      "GET    /api/sensores/zona/{zonaId}",
+      "POST   /api/sensores                [ADMIN, SUPERVISOR]",
+      "PUT    /api/sensores/{id}           [ADMIN, SUPERVISOR]",
+      "DELETE /api/sensores/{id}          [ADMIN]"
+    ],
+    "lecturas": [
+      "GET  /api/lecturas/sensor/{sensorId}",
+      "POST /api/lecturas"
+    ],
+    "tipos-planta": [
+      "GET    /api/tipos-planta",
+      "GET    /api/tipos-planta/{id}",
+      "POST   /api/tipos-planta            [ADMIN, SUPERVISOR]",
+      "PUT    /api/tipos-planta/{id}       [ADMIN, SUPERVISOR]",
+      "DELETE /api/tipos-planta/{id}      [ADMIN]"
+    ]
+  },
+
+  "relationships": {
+    "Zona → Planta":         "1:N — Una zona contiene múltiples plantas",
+    "Zona → Sensor":         "1:N — Una zona tiene múltiples sensores",
+    "Zona → Alerta":         "1:N — Una zona puede tener múltiples alertas",
+    "Zona → Turno":          "1:N — Una zona puede tener múltiples turnos",
+    "Sensor → LecturaSensor":"1:N — Un sensor registra múltiples lecturas",
+    "Sensor → Alerta":       "1:N (nullable) — Un sensor puede generar múltiples alertas; null para alertas manuales",
+    "TipoPlanta → Planta":   "1:N — Un tipo de planta agrupa múltiples plantas",
+    "Planta → Cosecha":      "1:N — Una planta puede tener múltiples cosechas",
+    "Planta → Tratamiento":  "1:N — Una planta puede recibir múltiples tratamientos",
+    "Empleado → Cosecha":    "1:N — Un empleado registra múltiples cosechas",
+    "Empleado → Tratamiento":"1:N — Un empleado aplica múltiples tratamientos",
+    "Empleado → Turno":      "1:N — Un empleado puede tener múltiples turnos",
+    "Empleado → Alerta (atendidoPor)": "1:N (nullable) — Un empleado puede gestionar múltiples alertas"
   }
 }

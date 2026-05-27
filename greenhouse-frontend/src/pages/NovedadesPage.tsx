@@ -4,6 +4,7 @@
  * Fecha: 2026
  */
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { zonaService, plantaService, alertaService, tratamientoService, empleadoService } from '../services/api'
 import toast from 'react-hot-toast'
@@ -22,6 +23,7 @@ const severidadColor: Record<string, string> = {
 }
 
 export default function NovedadesPage() {
+  const { t } = useTranslation()
   const qc = useQueryClient()
 
   const [tipo, setTipo] = useState<TipoNovedad>('ENFERMEDAD_PLANTA')
@@ -41,20 +43,17 @@ export default function NovedadesPage() {
     queryFn: () => plantaService.getAll().then(r => r.data),
   })
 
-  // Get own employee profile for auto-attribution
   const { data: miEmpleado } = useQuery<Empleado | null>({
     queryKey: ['empleados-me'],
     queryFn: () => empleadoService.getMe().then(r => r.data?.sin_perfil ? null : r.data),
   })
 
-  const plantasDeLaZona = plantas.filter(p =>
-    zonaId ? p.zona.id === Number(zonaId) : true
-  ).filter(p => p.estado !== 'COSECHADA' && p.estado !== 'MUERTA')
+  const plantasDeLaZona = plantas
+    .filter(p => zonaId ? p.zona.id === Number(zonaId) : true)
+    .filter(p => p.estado !== 'COSECHADA' && p.estado !== 'MUERTA')
 
-  // Creates Tratamiento(REVISION) for plant disease
   const reportarEnfermedad = useMutation({
     mutationFn: () => {
-      if (!plantaId || !descripcion) throw new Error('Completa todos los campos')
       const payload = {
         planta: { id: Number(plantaId) },
         empleado: miEmpleado ? { id: miEmpleado.id } : undefined,
@@ -68,17 +67,15 @@ export default function NovedadesPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tratamientos'] })
-      toast.success('Enfermedad reportada correctamente como revisión')
+      toast.success(t('novedad.exitoEnfermedad'))
       setSubmitted(true)
       resetForm()
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? 'Error al reportar la novedad'),
+    onError: (err: any) => toast.error(err?.response?.data?.message ?? t('common.noData')),
   })
 
-  // Creates manual Alerta for zone failure
   const reportarFallaZona = useMutation({
     mutationFn: () => {
-      if (!zonaId || !descripcion) throw new Error('Completa todos los campos')
       return alertaService.crearManual({
         zonaId: Number(zonaId),
         tipo: 'FALLA_SISTEMA',
@@ -90,11 +87,11 @@ export default function NovedadesPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['alertas'] })
       qc.invalidateQueries({ queryKey: ['alertas-count'] })
-      toast.success('Falla de zona reportada como alerta pendiente')
+      toast.success(t('novedad.exitoFalla'))
       setSubmitted(true)
       resetForm()
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? 'Error al reportar la novedad'),
+    onError: (err: any) => toast.error(err?.response?.data?.message ?? t('common.noData')),
   })
 
   const resetForm = () => {
@@ -121,25 +118,23 @@ export default function NovedadesPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
           <AlertTriangle className="text-orange-500" size={24} />
-          Reportar Novedad
+          {t('novedad.title')}
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Reporta una enfermedad en una planta o una falla del sistema en una zona.
-        </p>
+        <p className="text-sm text-gray-500 mt-1">{t('novedad.subtitle')}</p>
       </div>
 
       {submitted && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
-          <CheckCircle className="text-green-600" size={20} />
+          <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
           <p className="text-green-700 text-sm font-medium">
-            Novedad reportada correctamente. Puedes reportar otra si es necesario.
+            {t('novedad.novedadReportada')}
           </p>
         </div>
       )}
 
       {/* Type selector */}
       <div className="bg-white rounded-xl shadow-sm p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-700">Tipo de novedad</h2>
+        <h2 className="text-sm font-semibold text-gray-700">{t('novedad.tipoNovedad')}</h2>
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => { setTipo('ENFERMEDAD_PLANTA'); setSubmitted(false) }}
@@ -150,10 +145,8 @@ export default function NovedadesPage() {
             }`}
           >
             <Leaf size={24} className={tipo === 'ENFERMEDAD_PLANTA' ? 'text-green-600' : 'text-gray-400'} />
-            <span className="text-sm font-medium text-gray-700">Enfermedad en planta</span>
-            <span className="text-xs text-gray-500 text-center">
-              Reporta síntomas de enfermedad, plaga o daño en una planta específica
-            </span>
+            <span className="text-sm font-medium text-gray-700">{t('novedad.enfermedadPlanta')}</span>
+            <span className="text-xs text-gray-500 text-center">{t('novedad.enfermedadDesc')}</span>
           </button>
           <button
             onClick={() => { setTipo('FALLA_ZONA'); setSubmitted(false) }}
@@ -164,25 +157,23 @@ export default function NovedadesPage() {
             }`}
           >
             <AlertTriangle size={24} className={tipo === 'FALLA_ZONA' ? 'text-orange-500' : 'text-gray-400'} />
-            <span className="text-sm font-medium text-gray-700">Falla en zona</span>
-            <span className="text-xs text-gray-500 text-center">
-              Falla de refrigeración, riego, sensores u otro sistema en una zona
-            </span>
+            <span className="text-sm font-medium text-gray-700">{t('novedad.fallaZona')}</span>
+            <span className="text-xs text-gray-500 text-center">{t('novedad.fallaDesc')}</span>
           </button>
         </div>
       </div>
 
       {/* Form */}
       <div className="bg-white rounded-xl shadow-sm p-5 space-y-4">
-        {/* Zone selector — always shown */}
+        {/* Zone selector */}
         <div>
-          <label className="text-sm font-medium text-gray-700">Zona afectada</label>
+          <label className="text-sm font-medium text-gray-700">{t('novedad.zonaAfectada')}</label>
           <select
             className="w-full border rounded-lg px-3 py-2 mt-1 text-sm"
             value={zonaId}
             onChange={e => { setZonaId(e.target.value); setPlantaId('') }}
           >
-            <option value="">— Seleccionar zona —</option>
+            <option value="">{t('novedad.seleccionarZona')}</option>
             {zonas.map(z => (
               <option key={z.id} value={z.id}>{z.nombre}</option>
             ))}
@@ -192,14 +183,14 @@ export default function NovedadesPage() {
         {/* Plant selector — only for ENFERMEDAD_PLANTA */}
         {tipo === 'ENFERMEDAD_PLANTA' && (
           <div>
-            <label className="text-sm font-medium text-gray-700">Planta afectada</label>
+            <label className="text-sm font-medium text-gray-700">{t('novedad.plantaAfectada')}</label>
             <select
               className="w-full border rounded-lg px-3 py-2 mt-1 text-sm"
               value={plantaId}
               onChange={e => setPlantaId(e.target.value)}
               disabled={!zonaId}
             >
-              <option value="">— Seleccionar planta —</option>
+              <option value="">{t('novedad.seleccionarPlanta')}</option>
               {plantasDeLaZona.map(p => (
                 <option key={p.id} value={p.id}>
                   {p.codigo} — {p.tipoPlanta.nombre ?? 'Tipo ' + p.tipoPlanta.id} ({p.estado})
@@ -207,7 +198,7 @@ export default function NovedadesPage() {
               ))}
             </select>
             {zonaId && plantasDeLaZona.length === 0 && (
-              <p className="text-xs text-gray-400 mt-1">No hay plantas activas en esta zona</p>
+              <p className="text-xs text-gray-400 mt-1">{t('novedad.sinPlantasActivas')}</p>
             )}
           </div>
         )}
@@ -215,7 +206,7 @@ export default function NovedadesPage() {
         {/* Severity — only for FALLA_ZONA */}
         {tipo === 'FALLA_ZONA' && (
           <div>
-            <label className="text-sm font-medium text-gray-700">Severidad</label>
+            <label className="text-sm font-medium text-gray-700">{t('novedad.severidad')}</label>
             <div className="grid grid-cols-4 gap-2 mt-1">
               {severidades.map(s => (
                 <button
@@ -227,7 +218,7 @@ export default function NovedadesPage() {
                       : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
                   }`}
                 >
-                  {s}
+                  {t(`alerta.${s}`)}
                 </button>
               ))}
             </div>
@@ -237,26 +228,29 @@ export default function NovedadesPage() {
         {/* Description */}
         <div>
           <label className="text-sm font-medium text-gray-700">
-            {tipo === 'ENFERMEDAD_PLANTA' ? 'Descripción de los síntomas' : 'Descripción de la falla'}
+            {tipo === 'ENFERMEDAD_PLANTA' ? t('novedad.descSintomas') : t('novedad.descFalla')}
           </label>
           <textarea
             className="w-full border rounded-lg px-3 py-2 mt-1 text-sm"
             rows={4}
+            maxLength={500}
             value={descripcion}
             onChange={e => setDescripcion(e.target.value)}
             placeholder={
               tipo === 'ENFERMEDAD_PLANTA'
-                ? 'Ej: Manchas amarillas en las hojas, posible hongos. Requiere revisión urgente.'
-                : 'Ej: El sistema de refrigeración no está funcionando. La temperatura subió a 35°C.'
+                ? t('novedad.placeholderEnfermedad')
+                : t('novedad.placeholderFalla')
             }
           />
-          <p className="text-xs text-gray-400 mt-1">{descripcion.length} / 500 caracteres</p>
+          <p className="text-xs text-gray-400 mt-1">
+            {descripcion.length} / 500 {t('novedad.caracteres')}
+          </p>
         </div>
 
         {/* Reporter info */}
         {miEmpleado && (
           <div className="bg-gray-50 rounded-lg px-3 py-2 text-xs text-gray-600">
-            Reportado por: <span className="font-medium">{miEmpleado.nombreCompleto}</span>
+            {t('novedad.reportadoPor')}: <span className="font-medium">{miEmpleado.nombreCompleto}</span>
           </div>
         )}
 
@@ -271,13 +265,13 @@ export default function NovedadesPage() {
             }`}
           >
             <AlertTriangle size={14} />
-            {isSubmitting ? 'Enviando...' : 'Reportar novedad'}
+            {isSubmitting ? t('novedad.enviando') : t('novedad.reportar')}
           </button>
           <button
             onClick={() => { resetForm(); setSubmitted(false) }}
             className="px-4 py-2 rounded-lg text-sm bg-gray-100 text-gray-600 hover:bg-gray-200"
           >
-            Limpiar
+            {t('novedad.limpiar')}
           </button>
         </div>
       </div>

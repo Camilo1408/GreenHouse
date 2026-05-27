@@ -136,13 +136,13 @@ export default function DashboardPage() {
           <div className="px-5 py-4 border-b flex items-center justify-between">
             <h2 className="text-base font-semibold text-gray-700 flex items-center gap-2">
               <AlertTriangle size={18} className="text-red-500" />
-              Alertas pendientes ({alertasOrdenadas.length})
+              {t('dashboard.alertasPendientesTitle')} ({alertasOrdenadas.length})
             </h2>
             <button
               onClick={() => navigate('/alertas')}
               className="text-xs text-green-700 hover:text-green-900 font-medium flex items-center gap-1"
             >
-              Ver todas <ChevronRight size={14} />
+              {t('dashboard.verTodas')} <ChevronRight size={14} />
             </button>
           </div>
           <div className="divide-y divide-gray-100">
@@ -183,7 +183,7 @@ export default function DashboardPage() {
                 className="px-5 py-2.5 text-center text-xs text-green-700 hover:bg-gray-50 cursor-pointer font-medium"
                 onClick={() => navigate('/alertas')}
               >
-                Ver {alertasOrdenadas.length - 5} alertas más →
+                {t('dashboard.verMasAlertas', { n: alertasOrdenadas.length - 5 })}
               </div>
             )}
           </div>
@@ -192,7 +192,7 @@ export default function DashboardPage() {
 
       {/* Plant status summary */}
       <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-base font-semibold text-gray-700 mb-4">Estado de plantas</h2>
+        <h2 className="text-base font-semibold text-gray-700 mb-4">{t('dashboard.estadoPlantas')}</h2>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {['SEMBRADA', 'EN_CRECIMIENTO', 'LISTA_PARA_COSECHAR', 'COSECHADA', 'MUERTA'].map(estado => {
             const count = plantas?.filter((p: { estado: string }) => p.estado === estado).length ?? 0

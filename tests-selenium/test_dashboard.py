@@ -59,16 +59,26 @@ class TestDashboard:
         """
         HU-07 — El menú lateral muestra los enlaces de navegación correctos.
         Criterio: Deben existir enlaces a Dashboard, Zonas, Plantas, Alertas,
-                  Cosechas y Empleados.
+                  Cosechas, Novedades y Empleados (para ADMINISTRADOR).
         """
         driver = authenticated_driver
         driver.get(f"{BASE_URL}/dashboard")
         time.sleep(1)
 
         page = driver.page_source
-        sections = ["Zonas", "Plantas", "Alertas", "Cosechas", "Empleados"]
-        for section in sections:
-            assert section in page, f"La sección '{section}' no aparece en el menú lateral"
+        # Core sections visible to all roles
+        core_sections = ["Zonas", "Plantas", "Alertas", "Cosechas"]
+        for section in core_sections:
+            assert section in page or section.lower() in page.lower(), \
+                f"La sección '{section}' no aparece en el menú lateral"
+
+        # Novedades visible to all roles
+        assert "Novedad" in page or "novedades" in page.lower() or "Reports" in page, \
+            "La sección 'Novedades' no aparece en el menú lateral"
+
+        # Empleados visible only to ADMINISTRADOR (test user is admin)
+        assert "Empleados" in page or "Employees" in page, \
+            "La sección 'Empleados' no aparece para el administrador"
 
     def test_plant_status_breakdown_visible(self, authenticated_driver):
         """

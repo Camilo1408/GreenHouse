@@ -1,0 +1,378 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "title": "GreenHouse Manager — Historias de Usuario",
+  "description": "Listado completo de historias de usuario para importar en Taiga",
+  "version": "2.0.0",
+  "project": "greenhouse-manager",
+  "date": "2026-05-27",
+  "note": "Para importar en Taiga: usa el slug del proyecto configurado en TAIGA_PROJECT_SLUG",
+
+  "sprints": [
+    {
+      "sprint": 1,
+      "name": "Autenticación y Panel de Control",
+      "stories": [
+        {
+          "ref": "HU-01",
+          "subject": "Inicio de sesión con email y contraseña",
+          "description": "Como usuario registrado, quiero iniciar sesión con mi correo electrónico y contraseña para acceder al sistema.",
+          "acceptance_criteria": [
+            "El formulario de login acepta email y contraseña",
+            "Se muestra mensaje de error si las credenciales son incorrectas",
+            "Tras el login exitoso se redirige al dashboard",
+            "La sesión persiste usando cookie JSESSIONID",
+            "El endpoint POST /api/auth/login responde con 200 o 302"
+          ],
+          "points": 3,
+          "tags": ["auth", "backend", "frontend"]
+        },
+        {
+          "ref": "HU-02",
+          "subject": "Inicio de sesión con Google",
+          "description": "Como usuario, quiero poder iniciar sesión con mi cuenta de Google para no tener que recordar otra contraseña.",
+          "acceptance_criteria": [
+            "El botón 'Continuar con Google' redirige al flujo OAuth2",
+            "Tras la autenticación de Google se crea o actualiza el perfil del empleado",
+            "El campo authProvider queda como GOOGLE en el empleado",
+            "El endpoint /oauth2/authorization/google devuelve 302"
+          ],
+          "points": 5,
+          "tags": ["auth", "oauth2", "backend"]
+        },
+        {
+          "ref": "HU-03",
+          "subject": "Registro de usuario con verificación de correo",
+          "description": "Como nuevo usuario, quiero registrarme con mi correo y recibir un email de verificación para activar mi cuenta.",
+          "acceptance_criteria": [
+            "El formulario de registro acepta nombre, email y contraseña",
+            "Se envía email de verificación tras el registro",
+            "La cuenta queda inactiva hasta verificar el correo",
+            "El enlace de verificación expira en 24 horas",
+            "El endpoint GET /api/auth/verify activa la cuenta"
+          ],
+          "points": 5,
+          "tags": ["auth", "email", "backend"]
+        },
+        {
+          "ref": "HU-04",
+          "subject": "Visualizar panel de control con estadísticas",
+          "description": "Como usuario autenticado, quiero ver un panel de control con las estadísticas principales del invernadero al iniciar sesión.",
+          "acceptance_criteria": [
+            "El dashboard muestra el número total de plantas activas",
+            "El dashboard muestra el número de alertas pendientes",
+            "El dashboard muestra el total de cosechas del mes",
+            "El dashboard muestra el número de zonas activas",
+            "El dashboard muestra el desglose de plantas por estado (5 estados)",
+            "Al hacer clic en una alerta se navega a /alertas",
+            "La URL del dashboard es /dashboard"
+          ],
+          "points": 3,
+          "tags": ["dashboard", "frontend"]
+        }
+      ]
+    },
+    {
+      "sprint": 2,
+      "name": "Gestión de Entidades del Invernadero",
+      "stories": [
+        {
+          "ref": "HU-05",
+          "subject": "Gestión de zonas del invernadero",
+          "description": "Como supervisor o administrador, quiero crear, editar y consultar zonas del invernadero para organizar los cultivos.",
+          "acceptance_criteria": [
+            "Se puede listar todas las zonas con su estado",
+            "Se puede crear una zona con nombre, dimensión, capacidad y ubicación",
+            "Se puede editar los datos de una zona existente",
+            "Solo el administrador puede eliminar una zona",
+            "El endpoint GET /api/zonas devuelve 200 con lista"
+          ],
+          "points": 5,
+          "tags": ["zonas", "crud", "rbac"]
+        },
+        {
+          "ref": "HU-06",
+          "subject": "Gestión de plantas por ciclo de vida",
+          "description": "Como supervisor o administrador, quiero registrar plantas y actualizar su estado a lo largo del ciclo de vida.",
+          "acceptance_criteria": [
+            "Se puede crear una planta con código, tipo, zona y fecha de siembra",
+            "Los estados posibles son: SEMBRADA, EN_CRECIMIENTO, LISTA_PARA_COSECHAR, COSECHADA, MUERTA",
+            "Se puede filtrar plantas por zona y por estado",
+            "Solo el administrador puede eliminar una planta",
+            "El código de planta es único en el sistema"
+          ],
+          "points": 5,
+          "tags": ["plantas", "crud", "ciclo-vida"]
+        },
+        {
+          "ref": "HU-07",
+          "subject": "Monitoreo de alertas generadas por sensores",
+          "description": "Como usuario autenticado, quiero ver las alertas generadas automáticamente cuando los sensores detectan valores fuera de rango.",
+          "acceptance_criteria": [
+            "Al registrar una lectura fuera de umbralMin/umbralMax se crea una alerta automática",
+            "Las alertas tienen severidad: BAJA, MEDIA, ALTA, CRITICA",
+            "El dashboard muestra el conteo de alertas pendientes",
+            "Se puede filtrar alertas por estado (PENDIENTE, ATENDIDA, DESCARTADA)",
+            "El endpoint GET /api/alertas/count/pendientes devuelve {total: N}"
+          ],
+          "points": 8,
+          "tags": ["alertas", "sensores", "dashboard"]
+        },
+        {
+          "ref": "HU-08",
+          "subject": "Registro de cosechas con calidad y destino",
+          "description": "Como empleado, quiero registrar las cosechas obtenidas indicando peso, calidad y destino para llevar control de la producción.",
+          "acceptance_criteria": [
+            "Se puede registrar una cosecha con planta, empleado, fecha, peso, calidad y destino",
+            "La calidad puede ser A (Premium), B (Estándar) o C (Descarte)",
+            "El destino puede ser VENTA, CONSUMO_INTERNO o DESCARTE",
+            "El dashboard muestra estadísticas de cosechas del mes",
+            "El endpoint GET /api/cosechas/estadisticas/mes devuelve totalKg y cantidad"
+          ],
+          "points": 5,
+          "tags": ["cosechas", "crud", "produccion"]
+        },
+        {
+          "ref": "HU-09",
+          "subject": "Gestión de empleados y roles",
+          "description": "Como administrador, quiero gestionar los empleados del invernadero y asignarles roles para controlar el acceso al sistema.",
+          "acceptance_criteria": [
+            "Se puede listar, crear, editar y eliminar empleados",
+            "Los roles disponibles son: ADMINISTRADOR, SUPERVISOR, EMPLEADO",
+            "Solo el ADMINISTRADOR puede acceder a la gestión de empleados",
+            "El endpoint GET /api/empleados devuelve 401 sin autenticación",
+            "El endpoint GET /api/empleados devuelve 403 para no-administradores"
+          ],
+          "points": 5,
+          "tags": ["empleados", "rbac", "admin"]
+        },
+        {
+          "ref": "HU-10",
+          "subject": "Gestión de sensores por zona",
+          "description": "Como administrador o supervisor, quiero registrar y configurar los sensores de cada zona con sus umbrales de alerta.",
+          "acceptance_criteria": [
+            "Se puede crear un sensor con código, tipo y zona",
+            "Los tipos de sensor son: TEMPERATURA, HUMEDAD, PH, CO2, LUZ",
+            "Se puede configurar umbralMin y umbralMax por sensor",
+            "Al superar los umbrales con una lectura se genera alerta automática",
+            "Se puede filtrar sensores por zona"
+          ],
+          "points": 5,
+          "tags": ["sensores", "crud", "alertas"]
+        },
+        {
+          "ref": "HU-11",
+          "subject": "Registro de lecturas de sensores",
+          "description": "Como empleado, quiero registrar lecturas manuales de los sensores para complementar el monitoreo automático.",
+          "acceptance_criteria": [
+            "Se puede registrar una lectura con sensor, valor, unidad y fecha",
+            "La fuente puede ser AUTOMATICA o MANUAL",
+            "Si el valor está fuera de rango se crea una alerta automáticamente",
+            "Se puede consultar el historial de lecturas por sensor"
+          ],
+          "points": 3,
+          "tags": ["lecturas", "sensores", "monitoreo"]
+        },
+        {
+          "ref": "HU-12",
+          "subject": "Registro de tratamientos a plantas",
+          "description": "Como empleado, quiero registrar los tratamientos aplicados a las plantas para mantener trazabilidad del cuidado.",
+          "acceptance_criteria": [
+            "Los tipos de tratamiento son: FERTILIZACION, PESTICIDA, PODA, RIEGO_MANUAL, REVISION",
+            "Se puede registrar producto utilizado, dosis y observaciones",
+            "Se puede consultar el historial de tratamientos por planta",
+            "Todos los roles pueden registrar tratamientos"
+          ],
+          "points": 3,
+          "tags": ["tratamientos", "plantas", "trazabilidad"]
+        }
+      ]
+    },
+    {
+      "sprint": 3,
+      "name": "Control de Acceso por Roles (RBAC)",
+      "stories": [
+        {
+          "ref": "HU-27",
+          "subject": "Control de acceso por roles RBAC",
+          "description": "Como administrador, quiero que el sistema aplique restricciones según el rol de cada usuario para garantizar la seguridad.",
+          "acceptance_criteria": [
+            "El sidebar muestra solo las secciones permitidas para cada rol",
+            "Los botones de eliminar solo son visibles para ADMINISTRADOR",
+            "Los botones de crear/editar son visibles para ADMINISTRADOR y SUPERVISOR",
+            "El endpoint /api/auth/me devuelve el rol del usuario autenticado",
+            "Las rutas protegidas redirigen al login si no hay sesión activa"
+          ],
+          "points": 8,
+          "tags": ["rbac", "seguridad", "backend", "frontend"]
+        },
+        {
+          "ref": "HU-28",
+          "subject": "Administrador gestiona empleados exclusivamente",
+          "description": "Como administrador, quiero que solo yo pueda ver y gestionar el listado de empleados para proteger los datos sensibles.",
+          "acceptance_criteria": [
+            "El enlace 'Empleados' en el sidebar solo es visible para ADMINISTRADOR",
+            "Un SUPERVISOR o EMPLEADO recibe 403 al intentar GET /api/empleados",
+            "Todos los roles pueden consultar su propio perfil con GET /api/empleados/me",
+            "El badge del rol del usuario autenticado es visible en la parte inferior del sidebar"
+          ],
+          "points": 5,
+          "tags": ["rbac", "empleados", "admin"]
+        },
+        {
+          "ref": "HU-29",
+          "subject": "Supervisor crea y edita zonas y plantas sin eliminar",
+          "description": "Como supervisor, quiero poder crear y editar zonas, plantas y cosechas pero no eliminar nada creado por el administrador.",
+          "acceptance_criteria": [
+            "El SUPERVISOR puede acceder a POST y PUT de /api/zonas",
+            "El SUPERVISOR recibe 403 al intentar DELETE /api/zonas/{id}",
+            "El botón 'Eliminar' no aparece en la interfaz para SUPERVISOR",
+            "El botón 'Nueva zona' y 'Editar' sí aparecen para SUPERVISOR"
+          ],
+          "points": 5,
+          "tags": ["rbac", "supervisor", "zonas", "plantas"]
+        },
+        {
+          "ref": "HU-30",
+          "subject": "Empleado actualiza estados de alertas y cosechas",
+          "description": "Como empleado, quiero poder atender alertas y registrar cosechas, pero no modificar configuraciones del sistema.",
+          "acceptance_criteria": [
+            "El EMPLEADO puede usar PATCH /api/alertas/{id}/atender",
+            "El EMPLEADO puede usar PATCH /api/alertas/{id}/descartar",
+            "El EMPLEADO puede registrar una cosecha con POST /api/cosechas",
+            "El formulario de cosecha auto-completa el nombre del empleado autenticado",
+            "El EMPLEADO recibe 403 al intentar POST/PUT/DELETE en zonas o plantas"
+          ],
+          "points": 5,
+          "tags": ["rbac", "empleado", "alertas", "cosechas"]
+        },
+        {
+          "ref": "HU-31",
+          "subject": "Usuarios no autenticados son redirigidos al login",
+          "description": "Como sistema, quiero que cualquier acceso a rutas protegidas sin sesión activa redirija automáticamente al login.",
+          "acceptance_criteria": [
+            "Acceder a /dashboard sin sesión redirige a /login",
+            "Acceder a /zonas sin sesión redirige a /login",
+            "Los endpoints del API devuelven 401 sin cookie de sesión",
+            "Después del logout la URL cambia a /login y las cookies se limpian"
+          ],
+          "points": 3,
+          "tags": ["rbac", "seguridad", "auth", "frontend"]
+        }
+      ]
+    },
+    {
+      "sprint": 4,
+      "name": "Novedades e Internacionalización",
+      "stories": [
+        {
+          "ref": "HU-22",
+          "subject": "Reporte de novedad por enfermedad en planta",
+          "description": "Como empleado, quiero reportar enfermedades detectadas en plantas para que el equipo técnico pueda actuar.",
+          "acceptance_criteria": [
+            "El formulario de novedad permite seleccionar tipo: 'Enfermedad en planta'",
+            "Al seleccionar enfermedad en planta se muestran selector de zona y planta",
+            "El campo de descripción acepta síntomas observados",
+            "Al enviar se crea un Tratamiento de tipo REVISION en la planta seleccionada",
+            "El botón de envío está deshabilitado si faltan campos obligatorios",
+            "Se muestra mensaje de éxito tras el envío"
+          ],
+          "points": 5,
+          "tags": ["novedades", "tratamientos", "empleado", "frontend"]
+        },
+        {
+          "ref": "HU-23",
+          "subject": "Reporte de falla de sistema en zona",
+          "description": "Como empleado, quiero reportar fallas de sistema (refrigeración, riego, iluminación) en una zona para generar alertas.",
+          "acceptance_criteria": [
+            "El formulario de novedad permite seleccionar tipo: 'Falla en zona'",
+            "Al seleccionar falla en zona se muestra selector de zona y selector de severidad",
+            "Los niveles de severidad disponibles son: BAJA, MEDIA, ALTA, CRITICA",
+            "Al enviar se crea una Alerta de origen MANUAL en la zona seleccionada",
+            "La alerta aparece como PENDIENTE en la sección de alertas",
+            "El endpoint POST /api/alertas acepta {zonaId, tipo, severidad, descripcion}"
+          ],
+          "points": 5,
+          "tags": ["novedades", "alertas", "empleado", "backend"]
+        },
+        {
+          "ref": "HU-24",
+          "subject": "Navegación a Novedades desde el menú lateral",
+          "description": "Como usuario, quiero acceder a la sección de novedades desde el menú lateral para reportar incidencias rápidamente.",
+          "acceptance_criteria": [
+            "El enlace 'Novedades' aparece en el sidebar para TODOS los roles",
+            "Al hacer clic navega a /novedades",
+            "El ícono del menú diferencia Novedades de otras secciones"
+          ],
+          "points": 2,
+          "tags": ["novedades", "navegacion", "rbac", "frontend"]
+        },
+        {
+          "ref": "HU-25",
+          "subject": "Validación del formulario de novedades",
+          "description": "Como sistema, quiero validar que el formulario de novedades tenga todos los campos obligatorios antes de permitir el envío.",
+          "acceptance_criteria": [
+            "El botón 'Reportar novedad' está deshabilitado si no se ha seleccionado tipo",
+            "El botón está deshabilitado si no se ha seleccionado zona",
+            "El botón está deshabilitado si la descripción está vacía",
+            "Se muestra un mensaje de error si el backend rechaza la solicitud"
+          ],
+          "points": 2,
+          "tags": ["novedades", "validacion", "frontend"]
+        },
+        {
+          "ref": "HU-26",
+          "subject": "Selector de severidad visible para fallas en zona",
+          "description": "Como empleado, al reportar una falla en zona quiero indicar la severidad del problema para priorizar la atención.",
+          "acceptance_criteria": [
+            "Al seleccionar tipo 'Falla en zona' aparecen botones de severidad",
+            "Los botones son: BAJA, MEDIA, ALTA, CRITICA con colores diferenciados",
+            "La severidad seleccionada se envía al backend como parte de la alerta",
+            "El botón CRITICA tiene un color de alerta visible (rojo intenso)"
+          ],
+          "points": 2,
+          "tags": ["novedades", "alertas", "ux", "frontend"]
+        },
+        {
+          "ref": "HU-33",
+          "subject": "Interfaz multiidioma español e inglés",
+          "description": "Como usuario, quiero poder cambiar el idioma de la interfaz entre español e inglés para usar el sistema en mi idioma preferido.",
+          "acceptance_criteria": [
+            "El selector de idioma está visible en el sidebar o header de la aplicación",
+            "Al cambiar de idioma, todos los textos de la interfaz se actualizan inmediatamente",
+            "Los labels de formularios, menús, mensajes de error y éxito están traducidos",
+            "La preferencia de idioma persiste entre navegaciones dentro de la misma sesión",
+            "Los nombres de entidades del sistema (Zona, Planta, Alerta, etc.) están en ambos idiomas"
+          ],
+          "points": 5,
+          "tags": ["i18n", "ux", "frontend"]
+        },
+        {
+          "ref": "HU-34",
+          "subject": "Selector de idioma visible en toda la aplicación",
+          "description": "Como usuario, quiero que el selector de idioma esté accesible desde cualquier página del sistema.",
+          "acceptance_criteria": [
+            "El botón de cambio de idioma muestra 'English' o 'Español' según el idioma activo",
+            "El selector está presente en el dashboard, zonas, plantas, alertas y cosechas",
+            "El idioma cambia en tiempo real sin recargar la página"
+          ],
+          "points": 2,
+          "tags": ["i18n", "ux", "sidebar"]
+        }
+      ]
+    }
+  ],
+
+  "taiga_import_instructions": {
+    "format": "JSON",
+    "steps": [
+      "1. Accede a tu proyecto en Taiga",
+      "2. Navega a Backlog",
+      "3. Para cada historia: clic en '+ Add User Story'",
+      "4. Usa el campo 'subject' como título y 'description' como descripción",
+      "5. Agrega los 'acceptance_criteria' como ítems de 'Puntos de historia' o descripción",
+      "6. Asigna los 'tags' como etiquetas en Taiga",
+      "7. Asigna los 'points' como puntos de historia"
+    ],
+    "slug": "cesar_camilo-greenhouse-manager"
+  }
+}

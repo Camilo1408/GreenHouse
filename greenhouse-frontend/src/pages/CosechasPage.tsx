@@ -121,15 +121,15 @@ export default function CosechasPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-yellow-400">
-          <p className="text-xs text-gray-500 uppercase">Total cosechado</p>
+          <p className="text-xs text-gray-500 uppercase">{t('cosecha.totalCosechado')}</p>
           <p className="text-2xl font-bold text-gray-800 mt-1">{totalKg.toFixed(1)} kg</p>
         </div>
         <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-green-400">
-          <p className="text-xs text-gray-500 uppercase">Cosechas este mes</p>
+          <p className="text-xs text-gray-500 uppercase">{t('cosecha.cosechasMes')}</p>
           <p className="text-2xl font-bold text-gray-800 mt-1">{cosechasMes.length}</p>
         </div>
         <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-blue-400">
-          <p className="text-xs text-gray-500 uppercase">kg este mes</p>
+          <p className="text-xs text-gray-500 uppercase">{t('cosecha.kgMes')}</p>
           <p className="text-2xl font-bold text-gray-800 mt-1">{kgMes.toFixed(1)} kg</p>
         </div>
       </div>
@@ -145,7 +145,7 @@ export default function CosechasPage() {
                 value={form.plantaId}
                 onChange={e => setForm({ ...form, plantaId: e.target.value })}
               >
-                <option value="">— Seleccionar planta —</option>
+                <option value="">{t('cosecha.seleccionarPlanta')}</option>
                 {plantasActivas.map(p => (
                   <option key={p.id} value={p.id}>
                     {p.codigo} — {p.tipoPlanta.nombre ?? 'Tipo ' + p.tipoPlanta.id} ({p.estado.replace('_', ' ')})

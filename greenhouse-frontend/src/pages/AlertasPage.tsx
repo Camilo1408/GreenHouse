@@ -140,7 +140,7 @@ export default function AlertasPage() {
       {/* Filter bar */}
       <div className="flex items-center gap-3 bg-white rounded-xl p-3 shadow-sm">
         <Filter size={16} className="text-gray-400" />
-        <span className="text-sm text-gray-500">Filtrar:</span>
+        <span className="text-sm text-gray-500">{t('common.filter')}:</span>
         {(['TODAS', 'PENDIENTE', 'ATENDIDA', 'DESCARTADA'] as const).map(f => (
           <button
             key={f}
@@ -151,7 +151,7 @@ export default function AlertasPage() {
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            {f === 'TODAS' ? 'Todas' : f.replace('_', ' ')}
+            {f === 'TODAS' ? t('common.all') : t(`alerta.${f}`)}
             {' '}({f === 'TODAS' ? alertas.length : alertas.filter(a => a.estado === f).length})
           </button>
         ))}
@@ -196,7 +196,7 @@ export default function AlertasPage() {
                       {t(`alerta.${a.severidad}`)}
                     </span>
                     <span className={`text-xs px-2 py-0.5 rounded font-medium flex-shrink-0 ${estadoBadge[a.estado]}`}>
-                      {a.estado.replace('_', ' ')}
+                      {t(`alerta.${a.estado}`)}
                     </span>
                   </div>
                   {a.descripcion && (
@@ -233,7 +233,7 @@ export default function AlertasPage() {
                     onClick={() => openGestion(a.id!, 'notas', a)}
                     className="flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-lg hover:bg-blue-100 font-medium"
                   >
-                    <MessageSquare size={12} /> Notas
+                    <MessageSquare size={12} /> {t('alerta.notas')}
                   </button>
                   {isExpanded ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
                 </div>
@@ -244,26 +244,26 @@ export default function AlertasPage() {
                 <div className="px-4 pb-3 bg-gray-50 border-t border-gray-100 text-sm space-y-2">
                   {a.descripcion && (
                     <div>
-                      <p className="text-xs text-gray-500 font-medium mt-2">Descripción</p>
+                      <p className="text-xs text-gray-500 font-medium mt-2">{t('alerta.descripcion')}</p>
                       <p className="text-gray-700">{a.descripcion}</p>
                     </div>
                   )}
                   {a.notasResolucion && (
                     <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-100">
                       <p className="text-xs text-yellow-700 font-medium flex items-center gap-1 mb-1">
-                        <MessageSquare size={12} /> Notas de resolución
+                        <MessageSquare size={12} /> {t('alerta.notas')} de resolución
                       </p>
                       <p className="text-gray-700 text-sm">{a.notasResolucion}</p>
                     </div>
                   )}
                   {a.atendidoPor && (
                     <p className="text-xs text-gray-500">
-                      👤 Responsable: <span className="font-medium text-gray-700">{a.atendidoPor.nombreCompleto}</span>
+                      👤 {t('alerta.responsable')}: <span className="font-medium text-gray-700">{a.atendidoPor.nombreCompleto}</span>
                     </p>
                   )}
                   {a.sensor && (
                     <p className="text-xs text-gray-500">
-                      📡 Sensor: <span className="font-mono text-gray-700">{a.sensor.codigo}</span>
+                      📡 {t('alerta.sensor')}: <span className="font-mono text-gray-700">{a.sensor.codigo}</span>
                       {' — '}{a.sensor.tipoSensor}
                     </p>
                   )}
@@ -274,19 +274,19 @@ export default function AlertasPage() {
               {isGestionando && (
                 <div className="px-4 pb-4 border-t border-gray-100 bg-white">
                   <p className="text-xs font-semibold text-gray-600 mt-3 mb-2">
-                    {gestionAccion === 'atender' ? '✅ Marcar como atendida'
-                      : gestionAccion === 'descartar' ? '🗑 Descartar alerta'
-                      : '📝 Agregar nota'}
+                    {gestionAccion === 'atender' ? t('alerta.marcarAtendida')
+                      : gestionAccion === 'descartar' ? t('alerta.descartarAlerta')
+                      : t('alerta.agregarNota')}
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-gray-500">Empleado responsable</label>
+                      <label className="text-xs text-gray-500">{t('alerta.empleadoResponsable')}</label>
                       <select
                         className="w-full border rounded-lg px-3 py-2 mt-1 text-sm"
                         value={gestionForm.empleadoId}
                         onChange={e => setGestionForm({ ...gestionForm, empleadoId: e.target.value })}
                       >
-                        <option value="">— Sin asignar —</option>
+                        <option value="">{t('alerta.sinAsignar')}</option>
                         {empleados.filter(e => e.estado === 'ACTIVO').map(e => (
                           <option key={e.id} value={e.id}>{e.nombreCompleto}</option>
                         ))}
@@ -294,7 +294,7 @@ export default function AlertasPage() {
                     </div>
                     <div>
                       <label className="text-xs text-gray-500">
-                        Notas {gestionAccion !== 'notas' ? '(opcional)' : ''}
+                        {gestionAccion !== 'notas' ? t('alerta.notasOpcional') : t('alerta.notas')}
                       </label>
                       <textarea
                         className="w-full border rounded-lg px-3 py-2 mt-1 text-sm"
@@ -302,9 +302,9 @@ export default function AlertasPage() {
                         value={gestionForm.notas}
                         onChange={e => setGestionForm({ ...gestionForm, notas: e.target.value })}
                         placeholder={
-                          gestionAccion === 'atender' ? '¿Cómo se resolvió?'
-                          : gestionAccion === 'descartar' ? '¿Por qué se descarta?'
-                          : 'Agregar observación...'
+                          gestionAccion === 'atender' ? t('alerta.comoSeResolvio')
+                          : gestionAccion === 'descartar' ? t('alerta.porQueDescarta')
+                          : t('alerta.agregarObservacion')
                         }
                       />
                     </div>
@@ -318,15 +318,15 @@ export default function AlertasPage() {
                         : 'bg-blue-600 hover:bg-blue-700'
                       }`}
                     >
-                      {gestionAccion === 'atender' ? '✅ Confirmar atención'
-                        : gestionAccion === 'descartar' ? '🗑 Confirmar descarte'
-                        : '💾 Guardar nota'}
+                      {gestionAccion === 'atender' ? t('alerta.confirmarAtencion')
+                        : gestionAccion === 'descartar' ? t('alerta.confirmarDescarte')
+                        : t('alerta.guardarNota')}
                     </button>
                     <button
                       onClick={() => { setGestionId(null); setGestionAccion(null) }}
                       className="px-4 py-1.5 rounded-lg text-sm bg-gray-100 text-gray-600 hover:bg-gray-200"
                     >
-                      Cancelar
+                      {t('common.cancel')}
                     </button>
                   </div>
                 </div>

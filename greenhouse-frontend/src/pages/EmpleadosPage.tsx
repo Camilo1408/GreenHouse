@@ -104,27 +104,27 @@ export default function EmpleadosPage() {
           onClick={() => { setShowForm(true); setForm(emptyForm); setEditId(null) }}
           className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 text-sm"
         >
-          <Plus size={16} /> Nuevo Empleado
+          <Plus size={16} /> {t('empleado.nuevo')}
         </button>
       </div>
 
       {showForm && (
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-blue-50">
           <h2 className="font-semibold text-gray-700 mb-4">
-            {editId ? t('common.edit') : 'Nuevo Empleado'}
+            {editId ? t('common.edit') : t('empleado.nuevo')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="text-sm text-gray-600">{t('common.name')}</label>
+              <label className="text-sm text-gray-600">{t('empleado.nombre')}</label>
               <input
                 className="w-full border rounded-lg px-3 py-2 mt-1 text-sm"
                 value={form.nombreCompleto}
                 onChange={e => setForm({ ...form, nombreCompleto: e.target.value })}
-                placeholder="Nombre completo"
+                placeholder={t('empleado.nombre')}
               />
             </div>
             <div>
-              <label className="text-sm text-gray-600">Email</label>
+              <label className="text-sm text-gray-600">{t('empleado.email')}</label>
               <input
                 type="email"
                 className="w-full border rounded-lg px-3 py-2 mt-1 text-sm"
@@ -136,30 +136,30 @@ export default function EmpleadosPage() {
             </div>
             {!editId && (
               <div>
-                <label className="text-sm text-gray-600">Contraseña</label>
+                <label className="text-sm text-gray-600">{t('empleado.password')}</label>
                 <input
                   type="password"
                   className="w-full border rounded-lg px-3 py-2 mt-1 text-sm"
                   value={form.password}
                   onChange={e => setForm({ ...form, password: e.target.value })}
-                  placeholder="Contraseña temporal"
+                  placeholder={t('empleado.passwordPlaceholder')}
                 />
               </div>
             )}
             <div>
-              <label className="text-sm text-gray-600">Rol</label>
+              <label className="text-sm text-gray-600">{t('empleado.rol')}</label>
               <select
                 className="w-full border rounded-lg px-3 py-2 mt-1 text-sm"
                 value={form.rol}
                 onChange={e => setForm({ ...form, rol: e.target.value as Rol })}
               >
-                <option value="ADMINISTRADOR">Administrador</option>
-                <option value="SUPERVISOR">Supervisor</option>
-                <option value="EMPLEADO">Empleado</option>
+                <option value="ADMINISTRADOR">{t('empleado.ADMINISTRADOR')}</option>
+                <option value="SUPERVISOR">{t('empleado.SUPERVISOR')}</option>
+                <option value="EMPLEADO">{t('empleado.EMPLEADO')}</option>
               </select>
             </div>
             <div>
-              <label className="text-sm text-gray-600">Teléfono</label>
+              <label className="text-sm text-gray-600">{t('empleado.telefono')}</label>
               <input
                 className="w-full border rounded-lg px-3 py-2 mt-1 text-sm"
                 value={form.telefono}
@@ -174,8 +174,8 @@ export default function EmpleadosPage() {
                 value={form.estado}
                 onChange={e => setForm({ ...form, estado: e.target.value as Estado })}
               >
-                <option value="ACTIVO">Activo</option>
-                <option value="INACTIVO">Inactivo</option>
+                <option value="ACTIVO">{t('empleado.ACTIVO')}</option>
+                <option value="INACTIVO">{t('empleado.INACTIVO')}</option>
               </select>
             </div>
           </div>
@@ -201,10 +201,10 @@ export default function EmpleadosPage() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
             <tr>
-              <th className="px-4 py-3 text-left">{t('common.name')}</th>
-              <th className="px-4 py-3 text-left">Email</th>
-              <th className="px-4 py-3 text-left">Teléfono</th>
-              <th className="px-4 py-3 text-left">Rol</th>
+              <th className="px-4 py-3 text-left">{t('empleado.nombre')}</th>
+              <th className="px-4 py-3 text-left">{t('empleado.email')}</th>
+              <th className="px-4 py-3 text-left">{t('empleado.telefono')}</th>
+              <th className="px-4 py-3 text-left">{t('empleado.rol')}</th>
               <th className="px-4 py-3 text-left">{t('common.status')}</th>
               <th className="px-4 py-3 text-left">{t('common.actions')}</th>
             </tr>
@@ -233,7 +233,7 @@ export default function EmpleadosPage() {
                       ? 'bg-green-100 text-green-800'
                       : 'bg-gray-100 text-gray-600'
                   }`}>
-                    {e.estado}
+                    {t(`empleado.${e.estado}`)}
                   </span>
                 </td>
                 <td className="px-4 py-3 flex gap-2">
