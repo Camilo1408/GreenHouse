@@ -5,7 +5,7 @@
  */
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
@@ -13,7 +13,6 @@ import toast from 'react-hot-toast'
 export default function LoginPage() {
   const { t } = useTranslation()
   const [params] = useSearchParams()
-  const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -35,7 +34,9 @@ export default function LoginPage() {
         withCredentials: true,
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       })
-      navigate('/dashboard')
+      // Full page reload so AuthContext re-fetches /auth/me with the new session.
+      // navigate() does NOT reload the page so AuthContext would keep user=null.
+      window.location.href = '/dashboard'
     } catch (err: any) {
       const msg = err.response?.data?.mensaje || 'Credenciales incorrectas o correo no verificado'
       toast.error(msg)

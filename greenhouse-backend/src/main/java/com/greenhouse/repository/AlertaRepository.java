@@ -17,4 +17,12 @@ public interface AlertaRepository extends JpaRepository<Alerta, Long> {
     List<Alerta> findByZonaId(Long zonaId);
     List<Alerta> findBySeveridad(Alerta.Severidad severidad);
     long countByEstado(Alerta.EstadoAlerta estado);
+
+    /**
+     * Verifica si ya existe una alerta pendiente del mismo tipo que mencione
+     * la referencia de la planta (ej: "[PLT-5]") en la descripción.
+     * Usado por el scheduler para evitar duplicar alertas de cosecha.
+     */
+    boolean existsByTipoAndDescripcionContainingAndEstado(
+            String tipo, String descripcionContiene, Alerta.EstadoAlerta estado);
 }

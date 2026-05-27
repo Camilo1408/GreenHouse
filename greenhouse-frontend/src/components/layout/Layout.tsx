@@ -3,7 +3,7 @@
  * Autores: [Nombres del equipo]
  * Fecha: 2026
  */
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard, Map, Leaf, Bell, Wheat, Users, LogOut, Globe, Activity, AlertTriangle
@@ -12,7 +12,6 @@ import { useAuth } from '../../context/AuthContext'
 
 export default function Layout() {
   const { t, i18n } = useTranslation()
-  const navigate = useNavigate()
   const { isAdmin, user } = useAuth()
 
   const toggleLang = () =>
@@ -27,7 +26,9 @@ export default function Layout() {
     } catch (_) {
       // Si falla la llamada igual cerramos sesión en el frontend
     } finally {
-      navigate('/login')
+      // Full page reload clears AuthContext state completely,
+      // preventing the previous user's data from appearing on next login.
+      window.location.href = '/login'
     }
   }
 

@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +66,7 @@ public class AlertaController {
     }
 
     @PatchMapping("/{id}/atender")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','SUPERVISOR')")
     @Operation(summary = "Marcar alerta como atendida, con notas opcionales y empleado responsable")
     public ResponseEntity<Alerta> atender(
             @PathVariable Long id,
@@ -76,6 +78,7 @@ public class AlertaController {
     }
 
     @PatchMapping("/{id}/descartar")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','SUPERVISOR')")
     @Operation(summary = "Descartar una alerta, con notas opcionales")
     public ResponseEntity<Alerta> descartar(
             @PathVariable Long id,
@@ -87,6 +90,7 @@ public class AlertaController {
     }
 
     @PatchMapping("/{id}/notas")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','SUPERVISOR')")
     @Operation(summary = "Agregar notas a una alerta (cualquier estado)")
     public ResponseEntity<Alerta> agregarNotas(
             @PathVariable Long id,

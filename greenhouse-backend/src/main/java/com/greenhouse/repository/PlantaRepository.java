@@ -19,4 +19,7 @@ public interface PlantaRepository extends JpaRepository<Planta, Long> {
     List<Planta> findByEstado(Planta.EstadoPlanta estado);
     List<Planta> findByTipoPlantaId(Long tipoPlantaId);
     boolean existsByCodigo(String codigo);
+
+    /** Utilizado por el scheduler de alertas de cosecha. */
+    List<Planta> findByEstadoIn(List<Planta.EstadoPlanta> estados);
 }

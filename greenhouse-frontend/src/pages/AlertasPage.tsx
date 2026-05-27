@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { alertaService, empleadoService } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import type { Alerta, Empleado } from '../types'
 import { Bell, ChevronDown, ChevronUp, CheckCircle, XCircle, MessageSquare, Filter } from 'lucide-react'
@@ -41,6 +42,7 @@ interface GestionForm {
 export default function AlertasPage() {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const { canWrite } = useAuth()
 
   const [filtroEstado, setFiltroEstado] = useState<EstadoFilter>('TODAS')
   const [expandedId, setExpandedId] = useState<number | null>(null)
@@ -211,9 +213,9 @@ export default function AlertasPage() {
                   </div>
                 </div>
 
-                {/* Action buttons */}
+                {/* Action buttons — only ADMINISTRADOR and SUPERVISOR can manage alerts */}
                 <div className="flex items-center gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                  {a.estado === 'PENDIENTE' && (
+                  {canWrite && a.estado === 'PENDIENTE' && (
                     <>
                       <button
                         onClick={() => openGestion(a.id!, 'atender', a)}
@@ -229,12 +231,14 @@ export default function AlertasPage() {
                       </button>
                     </>
                   )}
-                  <button
-                    onClick={() => openGestion(a.id!, 'notas', a)}
-                    className="flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-lg hover:bg-blue-100 font-medium"
-                  >
-                    <MessageSquare size={12} /> {t('alerta.notas')}
-                  </button>
+                  {canWrite && (
+                    <button
+                      onClick={() => openGestion(a.id!, 'notas', a)}
+                      className="flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-lg hover:bg-blue-100 font-medium"
+                    >
+                      <MessageSquare size={12} /> {t('alerta.notas')}
+                    </button>
+                  )}
                   {isExpanded ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
                 </div>
               </div>
