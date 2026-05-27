@@ -4,18 +4,23 @@
 #        HU-36 (Generacion de alertas por lectura fuera de umbral)
 
 import pytest
+import time
 
 BASE_SENSORES = "http://localhost:8080/api/sensores"
 BASE_ZONAS    = "http://localhost:8080/api/zonas"
 BASE_LECTURAS = "http://localhost:8080/api/lecturas"
 BASE_ALERTAS  = "http://localhost:8080/api/alertas"
 
+# Sufijo único por ejecución para evitar colisiones de nombres/códigos en DB
+_TS = int(time.time())
+
 
 class TestSensoresAPI:
     """Pruebas de integracion para el endpoint /api/sensores."""
 
-    zona_id   = None
-    sensor_id = None
+    zona_id      = None
+    sensor_id    = None
+    sensor_codigo = None
 
     def test_get_all_sensores_retorna_200(self, auth_session):
         """GET /api/sensores debe retornar 200 con lista de sensores."""
@@ -29,7 +34,7 @@ class TestSensoresAPI:
         Crea zona primero, luego sensor asignado a esa zona.
         """
         zona_resp = auth_session.post(BASE_ZONAS, json={
-            "nombre": "Zona Sensores Test",
+            "nombre": f"Zona Sensores Test {_TS}",
             "estado": "ACTIVA",
             "dimensionM2": 35.0,
             "capacidadMaxPlantas": 80,
@@ -39,8 +44,9 @@ class TestSensoresAPI:
             f"No se pudo crear zona de prueba: {zona_resp.status_code} — {zona_resp.text}"
         TestSensoresAPI.zona_id = zona_resp.json()["id"]
 
+        codigo_sensor = f"SENS-TEST-{_TS}"
         sensor_resp = auth_session.post(BASE_SENSORES, json={
-            "codigo": "SENS-TEST-01",
+            "codigo": codigo_sensor,
             "tipoSensor": "TEMPERATURA",
             "zona": {"id": TestSensoresAPI.zona_id},
             "estado": "ACTIVO",
@@ -51,7 +57,8 @@ class TestSensoresAPI:
         assert sensor_resp.status_code == 201, \
             f"No se pudo crear sensor: {sensor_resp.status_code} — {sensor_resp.text}"
         data = sensor_resp.json()
-        assert data["codigo"] == "SENS-TEST-01"
+        TestSensoresAPI.sensor_codigo = codigo_sensor
+        assert data["codigo"] == codigo_sensor
         assert data["tipoSensor"] == "TEMPERATURA"
         assert data["umbralMin"] == 15.0
         assert data["umbralMax"] == 30.0
@@ -69,7 +76,7 @@ class TestSensoresAPI:
         data = r.json()
         assert isinstance(data, list)
         codigos = [s["codigo"] for s in data]
-        assert "SENS-TEST-01" in codigos, \
+        assert TestSensoresAPI.sensor_codigo in codigos, \
             "El sensor creado debe aparecer al listar por zona"
 
     def test_get_sensor_por_id(self, auth_session):
@@ -102,7 +109,8 @@ class TestSensoresAPI:
         lectura_resp = auth_session.post(BASE_LECTURAS, json={
             "sensor": {"id": TestSensoresAPI.sensor_id},
             "valor": 22.0,
-            "unidad": "°C"
+            "unidad": "°C",
+            "fuente": "MANUAL"
         })
         assert lectura_resp.status_code == 201, \
             f"No se pudo registrar lectura: {lectura_resp.status_code} — {lectura_resp.text}"
@@ -129,7 +137,8 @@ class TestSensoresAPI:
         lectura_resp = auth_session.post(BASE_LECTURAS, json={
             "sensor": {"id": TestSensoresAPI.sensor_id},
             "valor": 40.0,
-            "unidad": "°C"
+            "unidad": "°C",
+            "fuente": "MANUAL"
         })
         assert lectura_resp.status_code == 201, \
             f"No se pudo registrar lectura fuera de rango: {lectura_resp.status_code}"
@@ -146,7 +155,7 @@ class TestSensoresAPI:
             pytest.skip("Necesita crear sensor primero")
 
         r = auth_session.put(f"{BASE_SENSORES}/{TestSensoresAPI.sensor_id}", json={
-            "codigo": "SENS-TEST-01",
+            "codigo": TestSensoresAPI.sensor_codigo,
             "tipoSensor": "TEMPERATURA",
             "zona": {"id": TestSensoresAPI.zona_id},
             "estado": "ACTIVO",

@@ -13,8 +13,19 @@ Requisitos:
 """
 
 import os
+import time
 import pytest
 import requests
+from pathlib import Path
+
+# ── Cargar .env automáticamente si existe ──────────────────────────────────────
+_ENV_FILE = Path(__file__).parent.parent / ".env"
+if _ENV_FILE.exists():
+    for _line in _ENV_FILE.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _k, _, _v = _line.partition("=")
+            os.environ.setdefault(_k.strip(), _v.strip())
 
 # ── Configuración ──────────────────────────────────────────────────────────────
 TAIGA_URL      = os.getenv("TAIGA_URL",      "https://api.taiga.io/api/v1")
@@ -22,6 +33,9 @@ TAIGA_USER     = os.getenv("TAIGA_USERNAME", "")
 TAIGA_PASSWORD = os.getenv("TAIGA_PASSWORD", "")
 TAIGA_SLUG     = os.getenv("TAIGA_PROJECT_SLUG", "cesar_camilo-greenhouse-manager")
 API_BASE       = os.getenv("API_BASE_URL",   "http://localhost:8080")
+
+# Sufijo único para evitar colisiones de nombres/códigos en DB entre ejecuciones
+_TS = int(time.time())
 
 # Historias de usuario que DEBEN existir en el proyecto Taiga
 REQUIRED_USER_STORIES = [
@@ -470,7 +484,7 @@ class TestCriteriosAceptacion:
 
         zona_id = zonas_resp.json()[0]["id"]
         payload = {
-            "codigo": "SENS-TAIGA-01",
+            "codigo": f"SENS-TAIGA-{_TS}",
             "tipoSensor": "HUMEDAD",
             "zona": {"id": zona_id},
             "estado": "ACTIVO",
@@ -507,12 +521,13 @@ class TestCriteriosAceptacion:
         prev_resp = api_session.get(f"{API_BASE}/api/alertas/count/pendientes")
         prev_count = prev_resp.json().get("total", 0) if prev_resp.status_code == 200 else 0
 
-        # Registrar lectura extrema (1000 veces el máximo)
+        # Registrar lectura extrema (10 veces el máximo) — fuente MANUAL es obligatoria
         valor_extremo = (sensor["umbralMax"] or 100) * 10
         lectura_resp = api_session.post(f"{API_BASE}/api/lecturas", json={
             "sensor": {"id": sensor["id"]},
             "valor": valor_extremo,
-            "unidad": "test"
+            "unidad": "test",
+            "fuente": "MANUAL"
         })
         assert lectura_resp.status_code in [200, 201], \
             f"POST /api/lecturas falló: {lectura_resp.status_code}"

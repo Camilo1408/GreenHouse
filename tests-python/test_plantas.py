@@ -2,11 +2,14 @@
 # Autores: [Nombres del equipo] | Fecha: 2026
 
 import pytest
+import time
 from datetime import date
 
 BASE_PLANTAS = "http://localhost:8080/api/plantas"
 BASE_ZONAS   = "http://localhost:8080/api/zonas"
 BASE_TIPOS   = "http://localhost:8080/api/tipos-planta"
+
+_TS = int(time.time())
 
 
 class TestPlantasAPI:
@@ -25,11 +28,11 @@ class TestPlantasAPI:
     def test_create_apoyo_y_planta(self, auth_session):
         """Crea zona + tipo + planta usando auth. Retorna 201."""
         zona = auth_session.post(BASE_ZONAS, json={
-            "nombre": "Zona Plantas Test", "estado": "ACTIVA",
+            "nombre": f"Zona Plantas Test {_TS}", "estado": "ACTIVA",
             "dimensionM2": 20.0, "capacidadMaxPlantas": 30
         })
         tipo = auth_session.post(BASE_TIPOS, json={
-            "nombre": "Tipo Test Python",
+            "nombre": f"Tipo Test Python {_TS}",
             "temperaturaMin": 15.0, "temperaturaMax": 30.0,
             "humedadMin": 40.0, "humedadMax": 80.0,
             "cicloDias": 60
@@ -42,7 +45,7 @@ class TestPlantasAPI:
         TestPlantasAPI.tipo_id = tipo.json()["id"]
 
         payload = {
-            "codigo": "PLT-PY-001",
+            "codigo": f"PLT-PY-{_TS}",
             "tipoPlanta": {"id": TestPlantasAPI.tipo_id},
             "zona": {"id": TestPlantasAPI.zona_id},
             "fechaSiembra": str(date.today()),
@@ -51,7 +54,7 @@ class TestPlantasAPI:
         r = auth_session.post(BASE_PLANTAS, json=payload)
         assert r.status_code == 201, r.text
         data = r.json()
-        assert data["codigo"] == "PLT-PY-001"
+        assert data["codigo"] == f"PLT-PY-{_TS}"
         TestPlantasAPI.planta_id = data["id"]
 
     def test_get_plantas_por_estado(self, auth_session):

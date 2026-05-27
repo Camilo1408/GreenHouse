@@ -41,7 +41,7 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         if (empleadoRepo.existsByEmail("admin@greenhouse.com")) {
-            log.info("Datos de prueba ya existen. Omitiendo inicialización.");
+            log.info("Datos de prueba ya existen. Omitiendo inicialización completa.");
             // Asegurar que usuarios OAuth existentes tengan emailVerificado=true
             empleadoRepo.findAll().forEach(e -> {
                 if (!e.isEmailVerificado()) {
@@ -50,6 +50,21 @@ public class DataInitializer implements CommandLineRunner {
                     empleadoRepo.save(e);
                 }
             });
+            // Crear usuario de prueba 'empleado' si no existe (añadido en versión posterior)
+            if (!empleadoRepo.existsByEmail("empleado@greenhouse.com")) {
+                log.info("Creando usuario 'empleado@greenhouse.com' para pruebas automatizadas...");
+                empleadoRepo.save(Empleado.builder()
+                    .nombreCompleto("Empleado Test")
+                    .email("empleado@greenhouse.com")
+                    .passwordHash(passwordEncoder.encode("Empleado1234"))
+                    .rol(Empleado.RolEmpleado.EMPLEADO)
+                    .estado(Empleado.EstadoEmpleado.ACTIVO)
+                    .emailVerificado(true)
+                    .authProvider(Empleado.AuthProvider.LOCAL)
+                    .telefono("3001112233")
+                    .fechaIngreso(LocalDate.of(2025, 6, 1))
+                    .build());
+            }
             return;
         }
         log.info("Inicializando datos de prueba...");
