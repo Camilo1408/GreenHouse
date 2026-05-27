@@ -22,6 +22,36 @@ ADMIN_PASSWORD = "Admin1234"
 HEADLESS = os.environ.get("CI", "").lower() in ("true", "1", "yes")
 
 
+def _find_chromedriver() -> str:
+    """
+    Resuelve el path al chromedriver.exe real.
+
+    webdriver-manager tiene un bug conocido: .install() puede devolver el path a
+    THIRD_PARTY_NOTICES.chromedriver en vez del ejecutable, causando WinError 193.
+    Esta funcion busca chromedriver.exe en el mismo directorio que sea devuelto.
+    """
+    from pathlib import Path
+    from webdriver_manager.chrome import ChromeDriverManager
+
+    raw_path = ChromeDriverManager().install()
+    driver_dir = Path(raw_path).parent
+
+    # Buscar el ejecutable real en el directorio
+    for name in ("chromedriver.exe", "chromedriver"):
+        candidate = driver_dir / name
+        if candidate.exists():
+            return str(candidate)
+
+    # Si no lo encontro en el directorio inmediato, busca un nivel arriba
+    for name in ("chromedriver.exe", "chromedriver"):
+        candidate = driver_dir.parent / name
+        if candidate.exists():
+            return str(candidate)
+
+    # Fallback: devolver lo que retorno webdriver-manager (puede fallar)
+    return raw_path
+
+
 def get_driver(headless: bool = False) -> webdriver.Chrome:
     """Instancia Chrome. Sin headless: ventana visible para revisar las pruebas."""
     options = Options()
@@ -29,7 +59,7 @@ def get_driver(headless: bool = False) -> webdriver.Chrome:
         options.add_argument("--headless=new")
         options.add_argument("--disable-gpu")
 
-    # Flags estables en Windows (sin remote-debugging-port para evitar conflictos)
+    # Flags estables en Windows
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1400,900")
@@ -41,10 +71,12 @@ def get_driver(headless: bool = False) -> webdriver.Chrome:
         service = Service(executable_path=chrome_driver_path)
     else:
         try:
-            from webdriver_manager.chrome import ChromeDriverManager
-            service = Service(ChromeDriverManager().install())
-        except Exception:
-            service = Service()  # usa el chromedriver del PATH
+            driver_exe = _find_chromedriver()
+            print(f"\n[Selenium] ChromeDriver: {driver_exe}")
+            service = Service(executable_path=driver_exe)
+        except Exception as e:
+            print(f"\n[Selenium] webdriver-manager fallo ({e}), usando chromedriver del PATH")
+            service = Service()  # usa el chromedriver del PATH del sistema
 
     return webdriver.Chrome(service=service, options=options)
 
