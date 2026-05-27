@@ -5,21 +5,26 @@
 ::  Requiere: backend corriendo en localhost:8080
 :: ============================================================
 
+:: Forzar UTF-8 para que la salida de Python no cause errores de encoding
+chcp 65001 >nul
+set PYTHONIOENCODING=utf-8
+
 setlocal
 
 set ROOT=%~dp0
-set TESTS=%ROOT%tests-python
+set TESTS=%~dp0tests-python
 
 python --version >nul 2>&1
 if errorlevel 1 (
     echo.
-    echo   ERROR: Python no encontrado. Instala Python 3.10+ desde https://python.org
+    echo   ERROR: Python no encontrado. Instala Python 3.10+
     echo.
     set /p _=  Presiona Enter para cerrar...
     exit /b 1
 )
 
 :MENU
+cls
 echo.
 echo   ==============================================
 echo    GreenHouse Manager - Suite de Pruebas
@@ -36,6 +41,7 @@ echo     [4] Subir historias a Taiga  (taiga-upload.py)
 echo     [5] Limpiar datos de prueba anteriores
 echo     [0] Salir
 echo.
+set CHOICE=
 set /p CHOICE=  Tu eleccion (0-5):
 
 if "%CHOICE%"=="0" goto FIN
@@ -104,12 +110,13 @@ echo   Opciones de limpieza:
 echo     [a] Limpiar datos de prueba ahora
 echo     [b] Solo mostrar que se borraria (dry-run)
 echo.
+set CLEAN_CHOICE=
 set /p CLEAN_CHOICE=  Tu eleccion (a/b):
 echo.
 if /i "%CLEAN_CHOICE%"=="a" goto CLEAN_RUN
 python cleanup_test_data.py --dry-run
 set EXITCODE=%errorlevel%
-set SUITE=Limpieza de datos (dry-run)
+set SUITE=Limpieza dry-run
 set REPORT=
 goto RESUMEN
 :CLEAN_RUN
@@ -142,6 +149,7 @@ echo.
 echo   Los datos de prueba creados fueron eliminados automaticamente.
 echo   ==============================================
 echo.
+set OTRA=
 set /p OTRA=  Deseas ejecutar otra prueba? [S]i / [Enter] para cerrar:
 if /i "%OTRA%"=="S" goto MENU
 
