@@ -24,6 +24,8 @@ public class PlantaService {
     private final PlantaRepository plantaRepository;
     private final ZonaRepository zonaRepository;
     private final TipoPlantaRepository tipoPlantaRepository;
+    private final TratamientoRepository tratamientoRepository;
+    private final CosechaRepository cosechaRepository;
 
     public List<Planta> findAll() {
         return plantaRepository.findAll();
@@ -53,8 +55,14 @@ public class PlantaService {
         return plantaRepository.save(existing);
     }
 
+    /**
+     * Elimina una planta y todos sus datos asociados:
+     * tratamientos, cosechas y luego la planta.
+     */
     public void delete(Long id) {
         findById(id);
+        tratamientoRepository.deleteAll(tratamientoRepository.findByPlantaId(id));
+        cosechaRepository.deleteAll(cosechaRepository.findByPlantaId(id));
         plantaRepository.deleteById(id);
     }
 

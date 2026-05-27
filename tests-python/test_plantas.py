@@ -13,7 +13,7 @@ _TS = int(time.time())
 
 
 class TestPlantasAPI:
-    """Pruebas de integración para el endpoint /api/plantas (requiere auth)."""
+    """Pruebas de integración para el endpoint /api/plantas."""
 
     zona_id   = None
     tipo_id   = None
@@ -25,37 +25,54 @@ class TestPlantasAPI:
         assert r.status_code == 200
         assert isinstance(r.json(), list)
 
-    def test_create_apoyo_y_planta(self, auth_session):
-        """Crea zona + tipo + planta usando auth. Retorna 201."""
+    def test_create_apoyo_y_planta(self, auth_session, cleanup_registry):
+        """Crea zona + tipo + planta. Registra todo para cleanup al final."""
         zona = auth_session.post(BASE_ZONAS, json={
-            "nombre": f"Zona Plantas Test {_TS}", "estado": "ACTIVA",
-            "dimensionM2": 20.0, "capacidadMaxPlantas": 30
+            "nombre":              f"Zona Plantas Test {_TS}",
+            "estado":              "ACTIVA",
+            "dimensionM2":         20.0,
+            "capacidadMaxPlantas": 30,
         })
         tipo = auth_session.post(BASE_TIPOS, json={
-            "nombre": f"Tipo Test Python {_TS}",
-            "temperaturaMin": 15.0, "temperaturaMax": 30.0,
-            "humedadMin": 40.0, "humedadMax": 80.0,
-            "cicloDias": 60
+            "nombre":        f"Tipo Test Python {_TS}",
+            "temperaturaMin": 15.0,
+            "temperaturaMax": 30.0,
+            "humedadMin":     40.0,
+            "humedadMax":     80.0,
+            "cicloDias":      60,
         })
 
         if zona.status_code != 201 or tipo.status_code != 201:
-            pytest.skip("No se pudo crear zona/tipo de apoyo")
+            # Limpiar lo que se pudo crear antes de saltar
+            if zona.status_code == 201:
+                cleanup_registry["zonas"].append(zona.json()["id"])
+            if tipo.status_code == 201:
+                cleanup_registry["tipos_planta"].append(tipo.json()["id"])
+            pytest.skip(
+                f"No se pudo crear zona ({zona.status_code}) "
+                f"o tipo ({tipo.status_code}) de apoyo: "
+                f"{zona.text} | {tipo.text}"
+            )
 
         TestPlantasAPI.zona_id = zona.json()["id"]
         TestPlantasAPI.tipo_id = tipo.json()["id"]
+        cleanup_registry["zonas"].append(TestPlantasAPI.zona_id)
+        cleanup_registry["tipos_planta"].append(TestPlantasAPI.tipo_id)
 
+        planta_codigo = f"PLT-PY-{_TS}"
         payload = {
-            "codigo": f"PLT-PY-{_TS}",
+            "codigo":     planta_codigo,
             "tipoPlanta": {"id": TestPlantasAPI.tipo_id},
-            "zona": {"id": TestPlantasAPI.zona_id},
+            "zona":       {"id": TestPlantasAPI.zona_id},
             "fechaSiembra": str(date.today()),
-            "estado": "SEMBRADA"
+            "estado":     "SEMBRADA",
         }
         r = auth_session.post(BASE_PLANTAS, json=payload)
         assert r.status_code == 201, r.text
         data = r.json()
-        assert data["codigo"] == f"PLT-PY-{_TS}"
+        assert data["codigo"] == planta_codigo
         TestPlantasAPI.planta_id = data["id"]
+        cleanup_registry["plantas"].append(TestPlantasAPI.planta_id)
 
     def test_get_plantas_por_estado(self, auth_session):
         """GET /api/plantas/estado/SEMBRADA debe retornar solo plantas sembradas."""

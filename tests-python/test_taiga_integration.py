@@ -227,6 +227,12 @@ class TestCriteriosAceptacion:
             pytest.skip(f"Backend no disponible o credenciales incorrectas: {resp.status_code}")
         return session
 
+    # ── cleanup_registry inyectado por conftest.py ─────────────────────────
+    @pytest.fixture(scope="class")
+    def registry(self, cleanup_registry):
+        """Alias para acceder al cleanup_registry desde esta clase."""
+        return cleanup_registry
+
     @pytest.fixture(scope="class")
     def empleado_session(self):
         """Sesión autenticada como EMPLEADO (rol limitado)."""
@@ -383,7 +389,7 @@ class TestCriteriosAceptacion:
 
     # ── Sprint 4: Novedades ────────────────────────────────────────────────────
 
-    def test_ca_alertas_manual_creation(self, api_session):
+    def test_ca_alertas_manual_creation(self, api_session, registry):
         """
         CA-HU31: Se puede crear una alerta manual (novedad de falla en zona).
         Mapeado a: HU-31 'Reporte de falla de sistema en zona'
@@ -407,6 +413,8 @@ class TestCriteriosAceptacion:
         assert "id" in data, "La alerta creada debe tener un campo 'id'"
         assert data.get("tipo") == "FALLA_SISTEMA", \
             "El tipo de alerta no coincide con el enviado"
+        # Registrar alerta para descartarla en teardown
+        registry["alertas"].append(data["id"])
 
     def test_ca_alertas_patch_atender(self, api_session):
         """
@@ -473,7 +481,7 @@ class TestCriteriosAceptacion:
 
     # ── Sprint 5: Sensores avanzados y alertas de cosecha ─────────────────────
 
-    def test_ca_sensor_creation_for_zone(self, api_session):
+    def test_ca_sensor_creation_for_zone(self, api_session, registry):
         """
         CA-HU34: Se puede crear un sensor y asignarlo a una zona.
         Mapeado a: HU-34 'Creación de sensores inline al crear o editar zonas'
@@ -499,8 +507,10 @@ class TestCriteriosAceptacion:
         assert "id" in data
         assert data.get("tipoSensor") == "HUMEDAD"
         assert data.get("umbralMin") == 40.0
+        # Registrar sensor para eliminarlo al final de la sesión
+        registry["sensores"].append(data["id"])
 
-    def test_ca_sensor_out_of_range_generates_alert(self, api_session):
+    def test_ca_sensor_out_of_range_generates_alert(self, api_session, registry):
         """
         CA-HU35: Una lectura fuera de umbral genera alerta automática.
         Mapeado a: HU-35 'Alertas automáticas por valor de sensor fuera de umbral'
@@ -536,6 +546,15 @@ class TestCriteriosAceptacion:
         new_count = new_resp.json().get("total", 0) if new_resp.status_code == 200 else 0
         assert new_count > prev_count, \
             "Una lectura fuera de umbral debe generar al menos 1 alerta pendiente (HU-35)"
+        # Registrar alertas nuevas para descartarlas en teardown
+        pending_resp = api_session.get(f"{API_BASE}/api/alertas/pendientes")
+        if pending_resp.status_code == 200:
+            todas = pending_resp.json()
+            nuevas = todas[:max(0, new_count - prev_count)]
+            for a in nuevas:
+                aid = a.get("id")
+                if aid and aid not in registry["alertas"]:
+                    registry["alertas"].append(aid)
 
     def test_ca_sensores_por_zona_endpoint(self, api_session):
         """

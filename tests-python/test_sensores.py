@@ -16,10 +16,10 @@ _TS = int(time.time())
 
 
 class TestSensoresAPI:
-    """Pruebas de integracion para el endpoint /api/sensores."""
+    """Pruebas de integración para el endpoint /api/sensores."""
 
-    zona_id      = None
-    sensor_id    = None
+    zona_id       = None
+    sensor_id     = None
     sensor_codigo = None
 
     def test_get_all_sensores_retorna_200(self, auth_session):
@@ -28,41 +28,44 @@ class TestSensoresAPI:
         assert r.status_code == 200, f"Esperado 200, obtenido {r.status_code}"
         assert isinstance(r.json(), list), "Se esperaba una lista de sensores"
 
-    def test_crear_zona_y_sensor_secuencialmente(self, auth_session):
+    def test_crear_zona_y_sensor_secuencialmente(self, auth_session, cleanup_registry):
         """
         HU-35 — Al crear una zona se pueden crear sensores para ella inmediatamente.
         Crea zona primero, luego sensor asignado a esa zona.
         """
         zona_resp = auth_session.post(BASE_ZONAS, json={
-            "nombre": f"Zona Sensores Test {_TS}",
-            "estado": "ACTIVA",
-            "dimensionM2": 35.0,
+            "nombre":              f"Zona Sensores Test {_TS}",
+            "estado":              "ACTIVA",
+            "dimensionM2":         35.0,
             "capacidadMaxPlantas": 80,
-            "ubicacion": "Sector Prueba"
+            "ubicacion":           "Sector Prueba",
         })
         assert zona_resp.status_code == 201, \
             f"No se pudo crear zona de prueba: {zona_resp.status_code} — {zona_resp.text}"
         TestSensoresAPI.zona_id = zona_resp.json()["id"]
+        # Zona registrada: ZonaService.delete() limpiará sensores en cascada
+        cleanup_registry["zonas"].append(TestSensoresAPI.zona_id)
 
         codigo_sensor = f"SENS-TEST-{_TS}"
         sensor_resp = auth_session.post(BASE_SENSORES, json={
-            "codigo": codigo_sensor,
-            "tipoSensor": "TEMPERATURA",
-            "zona": {"id": TestSensoresAPI.zona_id},
-            "estado": "ACTIVO",
+            "codigo":          codigo_sensor,
+            "tipoSensor":      "TEMPERATURA",
+            "zona":            {"id": TestSensoresAPI.zona_id},
+            "estado":          "ACTIVO",
             "fechaInstalacion": "2026-01-01",
-            "umbralMin": 15.0,
-            "umbralMax": 30.0
+            "umbralMin":       15.0,
+            "umbralMax":       30.0,
         })
         assert sensor_resp.status_code == 201, \
             f"No se pudo crear sensor: {sensor_resp.status_code} — {sensor_resp.text}"
         data = sensor_resp.json()
+        TestSensoresAPI.sensor_id    = data["id"]
         TestSensoresAPI.sensor_codigo = codigo_sensor
-        assert data["codigo"] == codigo_sensor
+        # Sensor NO se registra en cleanup_registry: la zona lo eliminará en cascada
+        assert data["codigo"]    == codigo_sensor
         assert data["tipoSensor"] == "TEMPERATURA"
-        assert data["umbralMin"] == 15.0
-        assert data["umbralMax"] == 30.0
-        TestSensoresAPI.sensor_id = data["id"]
+        assert data["umbralMin"]  == 15.0
+        assert data["umbralMax"]  == 30.0
 
     def test_get_sensores_por_zona(self, auth_session):
         """
@@ -70,7 +73,6 @@ class TestSensoresAPI:
         """
         if TestSensoresAPI.zona_id is None:
             pytest.skip("Necesita ejecutar test_crear_zona_y_sensor_secuencialmente primero")
-
         r = auth_session.get(f"{BASE_SENSORES}/zona/{TestSensoresAPI.zona_id}")
         assert r.status_code == 200
         data = r.json()
@@ -83,7 +85,6 @@ class TestSensoresAPI:
         """GET /api/sensores/{id} debe retornar el sensor correcto."""
         if TestSensoresAPI.sensor_id is None:
             pytest.skip("Necesita crear sensor primero")
-
         r = auth_session.get(f"{BASE_SENSORES}/{TestSensoresAPI.sensor_id}")
         assert r.status_code == 200
         assert r.json()["id"] == TestSensoresAPI.sensor_id
@@ -96,84 +97,72 @@ class TestSensoresAPI:
     def test_lectura_dentro_umbral_no_genera_alerta(self, auth_session):
         """
         HU-36 — Una lectura dentro del umbral NO debe generar alerta nueva.
-        Registra una lectura normal y verifica que no se crearon nuevas alertas.
         """
         if TestSensoresAPI.sensor_id is None:
             pytest.skip("Necesita crear sensor primero")
-
-        # Obtener conteo previo de alertas
-        prev_count_resp = auth_session.get(f"{BASE_ALERTAS}/count/pendientes")
-        prev_count = prev_count_resp.json()["total"] if prev_count_resp.status_code == 200 else 0
-
-        # Registrar lectura dentro del umbral (15-30°C → 22°C está bien)
-        lectura_resp = auth_session.post(BASE_LECTURAS, json={
+        prev_count = _get_count_pendientes(auth_session)
+        # 22°C está dentro del rango 15-30°C
+        r = auth_session.post(BASE_LECTURAS, json={
             "sensor": {"id": TestSensoresAPI.sensor_id},
-            "valor": 22.0,
+            "valor":  22.0,
             "unidad": "°C",
-            "fuente": "MANUAL"
+            "fuente": "MANUAL",
         })
-        assert lectura_resp.status_code == 201, \
-            f"No se pudo registrar lectura: {lectura_resp.status_code} — {lectura_resp.text}"
-
-        # El conteo de alertas no debe aumentar
-        new_count_resp = auth_session.get(f"{BASE_ALERTAS}/count/pendientes")
-        new_count = new_count_resp.json()["total"] if new_count_resp.status_code == 200 else 0
+        assert r.status_code == 201, \
+            f"No se pudo registrar lectura: {r.status_code} — {r.text}"
+        new_count = _get_count_pendientes(auth_session)
         assert new_count == prev_count, \
             f"Se generó alerta inesperada: antes={prev_count}, después={new_count}"
 
-    def test_lectura_fuera_umbral_genera_alerta(self, auth_session):
+    def test_lectura_fuera_umbral_genera_alerta(self, auth_session, cleanup_registry):
         """
-        HU-36 — Una lectura fuera del umbral DEBE generar una alerta automática PENDIENTE.
-        Registra temperatura 40°C (máximo 30°C) y verifica alerta generada.
+        HU-36 — Una lectura fuera del umbral DEBE generar una alerta PENDIENTE.
+        La alerta generada se registra para descartarla en el teardown.
         """
         if TestSensoresAPI.sensor_id is None:
             pytest.skip("Necesita crear sensor primero")
-
-        # Obtener conteo previo
-        prev_count_resp = auth_session.get(f"{BASE_ALERTAS}/count/pendientes")
-        prev_count = prev_count_resp.json()["total"] if prev_count_resp.status_code == 200 else 0
-
-        # Registrar lectura fuera de umbral (40°C > máximo 30°C)
-        lectura_resp = auth_session.post(BASE_LECTURAS, json={
+        prev_count = _get_count_pendientes(auth_session)
+        # 40°C > máximo 30°C → debe generar alerta
+        r = auth_session.post(BASE_LECTURAS, json={
             "sensor": {"id": TestSensoresAPI.sensor_id},
-            "valor": 40.0,
+            "valor":  40.0,
             "unidad": "°C",
-            "fuente": "MANUAL"
+            "fuente": "MANUAL",
         })
-        assert lectura_resp.status_code == 201, \
-            f"No se pudo registrar lectura fuera de rango: {lectura_resp.status_code}"
-
-        # El conteo de alertas DEBE aumentar
-        new_count_resp = auth_session.get(f"{BASE_ALERTAS}/count/pendientes")
-        new_count = new_count_resp.json()["total"] if new_count_resp.status_code == 200 else 0
+        assert r.status_code == 201, \
+            f"No se pudo registrar lectura fuera de rango: {r.status_code}"
+        new_count = _get_count_pendientes(auth_session)
         assert new_count > prev_count, \
             "Se esperaba que se generara al menos 1 alerta por lectura fuera de umbral"
+        # Registrar la nueva alerta generada para descartarla en teardown
+        _register_new_alertas(auth_session, prev_count, cleanup_registry)
 
     def test_update_sensor_umbral(self, auth_session):
         """PUT /api/sensores/{id} debe actualizar los umbrales del sensor."""
         if TestSensoresAPI.sensor_id is None:
             pytest.skip("Necesita crear sensor primero")
-
         r = auth_session.put(f"{BASE_SENSORES}/{TestSensoresAPI.sensor_id}", json={
-            "codigo": TestSensoresAPI.sensor_codigo,
-            "tipoSensor": "TEMPERATURA",
-            "zona": {"id": TestSensoresAPI.zona_id},
-            "estado": "ACTIVO",
+            "codigo":          TestSensoresAPI.sensor_codigo,
+            "tipoSensor":      "TEMPERATURA",
+            "zona":            {"id": TestSensoresAPI.zona_id},
+            "estado":          "ACTIVO",
             "fechaInstalacion": "2026-01-01",
-            "umbralMin": 10.0,
-            "umbralMax": 35.0
+            "umbralMin":       10.0,
+            "umbralMax":       35.0,
         })
         assert r.status_code == 200, f"PUT falló: {r.status_code} — {r.text}"
         assert r.json()["umbralMin"] == 10.0
         assert r.json()["umbralMax"] == 35.0
 
-    def test_delete_sensor_retorna_204(self, auth_session):
-        """DELETE /api/sensores/{id} debe retornar 204."""
+    def test_delete_sensor_retorna_204(self, auth_session, cleanup_registry):
+        """DELETE /api/sensores/{id} debe retornar 204 y limpiar sus dependencias."""
         if TestSensoresAPI.sensor_id is None:
             pytest.skip("Necesita crear sensor primero")
-
         r = auth_session.delete(f"{BASE_SENSORES}/{TestSensoresAPI.sensor_id}")
         assert r.status_code == 204, f"DELETE falló: {r.status_code}"
+        # Sensor eliminado manualmente: la zona ya no necesita borrarlo en cascada
+        TestSensoresAPI.sensor_id    = None
+        TestSensoresAPI.sensor_codigo = None
 
 
 class TestSensoresRBAC:
@@ -188,17 +177,39 @@ class TestSensoresRBAC:
         resp = session.post(
             "http://localhost:8080/api/auth/login",
             data={"email": "empleado@greenhouse.com", "password": "Empleado1234"},
-            headers={"Content-Type": "application/x-www-form-urlencoded"}
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         if resp.status_code not in (200, 302):
             pytest.skip("Usuario empleado no disponible en el backend")
 
         r = session.post(BASE_SENSORES, json={
-            "codigo": "SENS-HACK-01",
-            "tipoSensor": "TEMPERATURA",
-            "zona": {"id": 1},
-            "estado": "ACTIVO",
-            "fechaInstalacion": "2026-01-01"
+            "codigo":          "SENS-HACK-01",
+            "tipoSensor":      "TEMPERATURA",
+            "zona":            {"id": 1},
+            "estado":          "ACTIVO",
+            "fechaInstalacion": "2026-01-01",
         })
         assert r.status_code in (403, 401), \
             f"Un EMPLEADO NO debe poder crear sensores (esperado 403/401, obtenido {r.status_code})"
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _get_count_pendientes(session) -> int:
+    """Devuelve el número actual de alertas pendientes."""
+    r = session.get(f"{BASE_ALERTAS}/count/pendientes")
+    return r.json().get("total", 0) if r.status_code == 200 else 0
+
+
+def _register_new_alertas(session, prev_count: int, cleanup_registry: dict):
+    """Registra las alertas nuevas generadas desde prev_count para descartarlas al final."""
+    r = session.get(f"{BASE_ALERTAS}/pendientes")
+    if r.status_code != 200:
+        return
+    todas = r.json()
+    # Las últimas alertas son las recién generadas (orden DESC por fecha)
+    nuevas = todas[:max(0, len(todas) - prev_count)]
+    for a in nuevas:
+        aid = a.get("id")
+        if aid and aid not in cleanup_registry["alertas"]:
+            cleanup_registry["alertas"].append(aid)
