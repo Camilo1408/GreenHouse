@@ -5,6 +5,7 @@
  */
 package com.greenhouse.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +19,9 @@ import org.springframework.web.servlet.i18n.*;
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
+
+    @Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
 
     /** Resuelve el locale desde el header Accept-Language de cada petición HTTP. */
     @Bean
@@ -38,7 +42,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:5173")
+                .allowedOriginPatterns("http://localhost:5173", "http://localhost:8080", frontendUrl)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
