@@ -1,0 +1,14 @@
+# Nixpacks config para GreenHouse Frontend
+# Mantiene Node.js en el container final para poder ejecutar serve
+
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["npm install"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "node node_modules/.bin/serve -s dist -l $PORT"
