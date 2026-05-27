@@ -15,6 +15,7 @@ import java.util.List;
 public interface AlertaRepository extends JpaRepository<Alerta, Long> {
     List<Alerta> findByEstado(Alerta.EstadoAlerta estado);
     List<Alerta> findByZonaId(Long zonaId);
+    List<Alerta> findBySensorId(Long sensorId);
     List<Alerta> findBySeveridad(Alerta.Severidad severidad);
     long countByEstado(Alerta.EstadoAlerta estado);
 

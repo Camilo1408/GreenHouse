@@ -7,6 +7,8 @@ package com.greenhouse.service;
 
 import com.greenhouse.entity.Sensor;
 import com.greenhouse.exception.ResourceNotFoundException;
+import com.greenhouse.repository.AlertaRepository;
+import com.greenhouse.repository.LecturaSensorRepository;
 import com.greenhouse.repository.SensorRepository;
 import com.greenhouse.repository.ZonaRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,8 @@ public class SensorService {
 
     private final SensorRepository sensorRepository;
     private final ZonaRepository zonaRepository;
+    private final LecturaSensorRepository lecturaRepository;
+    private final AlertaRepository alertaRepository;
 
     public List<Sensor> findAll() {
         return sensorRepository.findAll();
@@ -65,6 +69,14 @@ public class SensorService {
 
     public void delete(Long id) {
         findById(id);
+        // 1. Eliminar lecturas asociadas (FK no nula — deben borrarse primero)
+        lecturaRepository.deleteAll(lecturaRepository.findBySensorId(id));
+        // 2. Desasociar alertas (FK nullable — se pone a null para conservar el historial)
+        alertaRepository.findBySensorId(id).forEach(a -> {
+            a.setSensor(null);
+            alertaRepository.save(a);
+        });
+        // 3. Eliminar el sensor
         sensorRepository.deleteById(id);
     }
 }
