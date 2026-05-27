@@ -311,6 +311,9 @@ jobs:
         uses: browser-actions/setup-chrome@v1
         id: setup-chrome
 
+      - name: Dar permisos de ejecución al chromedriver
+        run: chmod +x ${{ steps.setup-chrome.outputs.chromedriver-path }}
+
       - name: Ejecutar tests Selenium — Auth y Dashboard
         working-directory: tests-selenium
         run: pytest test_auth.py test_dashboard.py -v --html=report-dashboard.html --self-contained-html

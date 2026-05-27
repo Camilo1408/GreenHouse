@@ -68,6 +68,14 @@ def get_driver(headless: bool = False) -> webdriver.Chrome:
     # En CI usa el chromedriver del PATH; localmente descarga con webdriver-manager
     chrome_driver_path = os.environ.get("CHROMEDRIVER_PATH", "")
     if chrome_driver_path:
+        # En Linux (GitHub Actions) el archivo puede no tener permisos de ejecucion
+        import stat as _stat
+        try:
+            current_mode = os.stat(chrome_driver_path).st_mode
+            os.chmod(chrome_driver_path,
+                     current_mode | _stat.S_IEXEC | _stat.S_IXGRP | _stat.S_IXOTH)
+        except OSError:
+            pass  # En Windows no aplica; ignorar si no se puede cambiar
         service = Service(executable_path=chrome_driver_path)
     else:
         try:
