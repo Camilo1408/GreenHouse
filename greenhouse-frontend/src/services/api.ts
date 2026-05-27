@@ -14,7 +14,13 @@ const api = axios.create({
 api.interceptors.response.use(
   res => res,
   err => {
-    if (err.response?.status === 401) {
+    // Only redirect to /login when a 401 occurs outside of the login/register pages.
+    // Without this guard, AuthContext's /auth/me check (which returns 401 when the
+    // user is not yet logged in) would trigger a redirect that reloads the page
+    // endlessly while the user is already on /login.
+    const publicPaths = ['/login', '/register']
+    const onPublicPage = publicPaths.some(p => window.location.pathname.startsWith(p))
+    if (err.response?.status === 401 && !onPublicPage) {
       window.location.href = '/login'
     }
     return Promise.reject(err)

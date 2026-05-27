@@ -4,7 +4,7 @@
  * Fecha: 2026
  */
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import api from '../services/api'
+import axios from 'axios'
 
 export type Rol = 'ADMINISTRADOR' | 'SUPERVISOR' | 'EMPLEADO'
 
@@ -40,14 +40,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get('/auth/me')
+    // Use raw axios (not the api instance) so the 401 interceptor does NOT
+    // fire here — a 401 on /auth/me simply means the user is not logged in yet,
+    // and PrivateRoute is responsible for the redirect.
+    axios.get('/api/auth/me', { withCredentials: true })
       .then(r => {
         if (r.data?.exito) {
           setUser({ email: r.data.email, rol: r.data.rol })
         }
       })
       .catch(() => {
-        // Not authenticated — PrivateRoute will redirect
+        // Not authenticated — PrivateRoute will redirect to /login
       })
       .finally(() => setLoading(false))
   }, [])
