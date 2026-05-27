@@ -7,15 +7,14 @@ package com.greenhouse.service;
 
 import com.greenhouse.entity.*;
 import com.greenhouse.exception.ResourceNotFoundException;
-import com.greenhouse.repository.PlantaRepository;
-import com.greenhouse.repository.ZonaRepository;
-import com.greenhouse.repository.TipoPlantaRepository;
+import com.greenhouse.repository.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,9 +29,11 @@ import static org.mockito.Mockito.*;
 @DisplayName("Pruebas unitarias - PlantaService")
 class PlantaServiceTest {
 
-    @Mock private PlantaRepository plantaRepository;
-    @Mock private ZonaRepository zonaRepository;
-    @Mock private TipoPlantaRepository tipoPlantaRepository;
+    @Mock private PlantaRepository       plantaRepository;
+    @Mock private ZonaRepository         zonaRepository;
+    @Mock private TipoPlantaRepository   tipoPlantaRepository;
+    @Mock private TratamientoRepository  tratamientoRepository;
+    @Mock private CosechaRepository      cosechaRepository;
     @InjectMocks private PlantaService plantaService;
 
     private Planta planta;
@@ -164,12 +165,18 @@ class PlantaServiceTest {
     }
 
     @Test
-    @DisplayName("delete debe eliminar la planta si existe")
+    @DisplayName("delete debe eliminar la planta y sus dependencias (tratamientos y cosechas)")
     void delete_plantaExistente_debeEliminar() {
         when(plantaRepository.findById(1L)).thenReturn(Optional.of(planta));
+        // Stub de dependencias cascade: la planta de prueba no tiene tratamientos
+        // ni cosechas asociadas, por lo que se devuelven listas vacias
+        when(tratamientoRepository.findByPlantaId(1L)).thenReturn(Collections.emptyList());
+        when(cosechaRepository.findByPlantaId(1L)).thenReturn(Collections.emptyList());
 
         plantaService.delete(1L);
 
+        verify(tratamientoRepository).deleteAll(Collections.emptyList());
+        verify(cosechaRepository).deleteAll(Collections.emptyList());
         verify(plantaRepository).deleteById(1L);
     }
 }

@@ -7,12 +7,13 @@ package com.greenhouse.service;
 
 import com.greenhouse.entity.Zona;
 import com.greenhouse.exception.ResourceNotFoundException;
-import com.greenhouse.repository.ZonaRepository;
+import com.greenhouse.repository.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,7 +24,14 @@ import static org.mockito.Mockito.*;
 @DisplayName("Pruebas unitarias - ZonaService")
 class ZonaServiceTest {
 
-    @Mock private ZonaRepository zonaRepository;
+    @Mock private ZonaRepository         zonaRepository;
+    @Mock private SensorRepository       sensorRepository;
+    @Mock private LecturaSensorRepository lecturaRepository;
+    @Mock private AlertaRepository       alertaRepository;
+    @Mock private PlantaRepository       plantaRepository;
+    @Mock private TratamientoRepository  tratamientoRepository;
+    @Mock private CosechaRepository      cosechaRepository;
+    @Mock private TurnoRepository        turnoRepository;
     @InjectMocks private ZonaService zonaService;
 
     private Zona zona;
@@ -87,7 +95,15 @@ class ZonaServiceTest {
     @DisplayName("delete debe eliminar la zona si existe")
     void delete_zonaExistente_debeEliminar() {
         when(zonaRepository.findById(1L)).thenReturn(Optional.of(zona));
+        // Stub de dependencias cascade: la zona de prueba no tiene sensores,
+        // plantas, turnos ni alertas propias, por lo que se devuelven listas vacias
+        when(sensorRepository.findByZonaId(1L)).thenReturn(Collections.emptyList());
+        when(plantaRepository.findByZonaId(1L)).thenReturn(Collections.emptyList());
+        when(turnoRepository.findByZonaId(1L)).thenReturn(Collections.emptyList());
+        when(alertaRepository.findByZonaId(1L)).thenReturn(Collections.emptyList());
+
         zonaService.delete(1L);
+
         verify(zonaRepository).deleteById(1L);
     }
 }
