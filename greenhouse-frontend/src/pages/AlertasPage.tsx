@@ -71,14 +71,14 @@ export default function AlertasPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['alertas'] })
       qc.invalidateQueries({ queryKey: ['alertas-count'] })
-      const msg = gestionAccion === 'atender' ? 'Alerta marcada como atendida'
-        : gestionAccion === 'descartar' ? 'Alerta descartada'
-        : 'Nota agregada correctamente'
+      const msg = gestionAccion === 'atender' ? t('alerta.toastAtendida')
+        : gestionAccion === 'descartar' ? t('alerta.toastDescartada')
+        : t('alerta.toastNota')
       toast.success(msg)
       setGestionId(null); setGestionAccion(null)
       setGestionForm({ notas: '', empleadoId: '' })
     },
-    onError: () => toast.error('Error al procesar la alerta'),
+    onError: () => toast.error(t('alerta.toastError')),
   })
 
   const alertasFiltradas = filtroEstado === 'TODAS'
@@ -110,12 +110,12 @@ export default function AlertasPage() {
         <div className="flex gap-2">
           {pendientes > 0 && (
             <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">
-              {pendientes} pendiente{pendientes !== 1 ? 's' : ''}
+              {pendientes} {t('alerta.pendientesLabel')}
             </span>
           )}
           {criticas > 0 && (
             <span className="bg-red-900 text-white px-3 py-1 rounded-full text-sm font-bold animate-pulse">
-              {criticas} crítica{criticas !== 1 ? 's' : ''}
+              {criticas} {t('alerta.criticasLabel')}
             </span>
           )}
         </div>
@@ -132,7 +132,7 @@ export default function AlertasPage() {
             } ${estadoBadge[estado]} border-transparent hover:opacity-90`}
           >
             <p className="text-2xl font-bold">{alertas.filter(a => a.estado === estado).length}</p>
-            <p className="text-xs uppercase font-medium">{estado.replace('_', ' ')}</p>
+            <p className="text-xs uppercase font-medium">{t(`alerta.${estado}`)}</p>
           </button>
         ))}
       </div>
@@ -251,7 +251,7 @@ export default function AlertasPage() {
                   {a.notasResolucion && (
                     <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-100">
                       <p className="text-xs text-yellow-700 font-medium flex items-center gap-1 mb-1">
-                        <MessageSquare size={12} /> {t('alerta.notas')} de resolución
+                        <MessageSquare size={12} /> {t('alerta.resolverNota')}
                       </p>
                       <p className="text-gray-700 text-sm">{a.notasResolucion}</p>
                     </div>

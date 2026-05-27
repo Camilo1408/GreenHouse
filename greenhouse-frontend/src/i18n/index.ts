@@ -130,6 +130,14 @@ const resources = {
         comoSeResolvio:     '¿Cómo se resolvió?',
         porQueDescarta:     '¿Por qué se descarta?',
         agregarObservacion: 'Agregar observación...',
+        // Badges del header
+        pendientesLabel: 'pendiente(s)',
+        criticasLabel:   'crítica(s)',
+        // Toast messages
+        toastAtendida:   'Alerta marcada como atendida',
+        toastDescartada: 'Alerta descartada',
+        toastNota:       'Nota agregada correctamente',
+        toastError:      'Error al procesar la alerta',
       },
       cosecha: {
         title:         'Cosechas',
@@ -380,6 +388,14 @@ const resources = {
         comoSeResolvio:     'How was it resolved?',
         porQueDescarta:     'Why is it being dismissed?',
         agregarObservacion: 'Add observation...',
+        // Header badges
+        pendientesLabel: 'pending',
+        criticasLabel:   'critical',
+        // Toast messages
+        toastAtendida:   'Alert marked as attended',
+        toastDescartada: 'Alert dismissed',
+        toastNota:       'Note added successfully',
+        toastError:      'Error processing the alert',
       },
       cosecha: {
         title:         'Harvests',
