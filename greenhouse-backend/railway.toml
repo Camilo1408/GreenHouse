@@ -4,7 +4,7 @@ buildCommand = "mvn package -DskipTests -B"
 
 [deploy]
 startCommand = "java -jar target/*.jar"
-healthcheckPath = "/api/zonas"
-healthcheckTimeout = 120
+healthcheckPath = "/actuator/health"
+healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
