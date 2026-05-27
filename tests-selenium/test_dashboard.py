@@ -29,6 +29,11 @@ class TestDashboard:
         Criterio: La URL debe ser /dashboard y el título debe estar visible.
         """
         driver = authenticated_driver
+        # Navegar explicitamente al dashboard (tests anteriores pueden haber
+        # dejado el driver en otra URL de la sesion compartida)
+        driver.get(f"{BASE_URL}/dashboard")
+        time.sleep(2)
+
         assert "/dashboard" in driver.current_url, \
             f"Se esperaba /dashboard, pero se está en: {driver.current_url}"
 

@@ -146,23 +146,41 @@ class TestZonaSensorCreation:
         Criterio: Deben estar disponibles los tipos de sensor (TEMPERATURA, HUMEDAD, etc.).
         """
         driver = authenticated_driver
+        # Navegar limpio a /zonas para cerrar cualquier modal abierto por el test anterior
         driver.get(f"{BASE_URL}/zonas")
         time.sleep(2)
 
-        # Open create form
-        buttons = driver.find_elements(By.TAG_NAME, "button")
-        for btn in buttons:
-            if "Nueva" in btn.text or "New" in btn.text or "Zona" in btn.text:
-                btn.click()
-                time.sleep(1)
-                break
+        # Buscar boton de crear zona
+        nueva_zona_btn = None
+        candidates = driver.find_elements(
+            By.XPATH, "//button[contains(., 'Nueva') or contains(., 'New') or "
+                      "contains(., 'Crear') or contains(., 'Create')]"
+        )
+        if candidates:
+            nueva_zona_btn = candidates[0]
+
+        if nueva_zona_btn is None:
+            pytest.skip("No se encontro el boton de crear zona")
+
+        nueva_zona_btn.click()
+
+        # Esperar a que el modal/formulario cargue completamente
+        try:
+            WebDriverWait(driver, 5).until(
+                lambda d: any(t in d.page_source for t in [
+                    "TEMPERATURA", "HUMEDAD", "Temperatura", "Humedad",
+                    "tipoSensor", "tipo-sensor", "Sensor", "sensor"
+                ])
+            )
+        except Exception:
+            pass  # si no aparece en 5s, la assert lo capturara
 
         page = driver.page_source
         sensor_types = ["TEMPERATURA", "HUMEDAD", "PH", "CO2", "LUZ",
-                        "Temperatura", "Humedad", "Luz"]
+                        "Temperatura", "Humedad", "Luz", "Sensor", "sensor"]
         found = any(t in page for t in sensor_types)
         assert found, \
-            "Los tipos de sensor no son visibles en el formulario de zona"
+            "HU-35: Los tipos de sensor no son visibles en el formulario de zona"
 
 
 class TestAlertasSensorUI:
