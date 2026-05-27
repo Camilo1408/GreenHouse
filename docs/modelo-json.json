@@ -2,10 +2,15 @@
   "$schema": "https://json-schema.org/draft/2020-12",
   "title": "GreenHouse Manager — Modelo de Datos JSON",
   "description": "Esquema completo de las entidades del sistema de gestión de invernaderos",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "authors": ["[Nombres del equipo]"],
-  "date": "2026",
+  "date": "2026-05-27",
   "changelog": [
+    "v3.0.0 — Zona: creación de sensores inline desde el formulario de zona (HU-34)",
+    "v3.0.0 — LecturaSensor: generación automática de alertas por umbral con severidad calculada (HU-35)",
+    "v3.0.0 — CosechaAlertaScheduler: alertas automáticas de cosecha cada 6h (HU-36)",
+    "v3.0.0 — DataInitializer: añadido empleado@greenhouse.com para tests RBAC",
+    "v3.0.0 — AlertaService: ahora soporta crearManual() con EmpleadoRepository y ZonaRepository",
     "v2.0.0 — Alerta: añadidos atendidoPor, notasResolucion y origen MANUAL/AUTOMATICA",
     "v2.0.0 — POST /api/alertas para creación manual (novedades de falla en zona)",
     "v2.0.0 — GET /api/empleados/me accesible a todos los roles autenticados",
@@ -13,6 +18,46 @@
     "v2.0.0 — Tratamiento.tipoTratamiento: añadido REVISION para novedades de enfermedad",
     "v2.0.0 — Sensor: umbralMin/umbralMax para generación automática de alertas"
   ],
+  "new_in_v3": {
+    "sensor_inline_creation": {
+      "description": "El formulario de zona (ZonasPage.tsx) permite agregar sensores inline",
+      "flow": [
+        "1. Usuario abre formulario de Nueva Zona",
+        "2. Opcional: agrega filas de sensor con tipo, código y umbrales",
+        "3. Al guardar: POST /api/zonas → obtiene zonaId",
+        "4. Por cada sensor: POST /api/sensores con zona.id = zonaId",
+        "5. Secuencia garantizada con async/await"
+      ],
+      "tipo_defaults": {
+        "TEMPERATURA": { "umbralMin": 15, "umbralMax": 30 },
+        "HUMEDAD":     { "umbralMin": 40, "umbralMax": 80 },
+        "PH":          { "umbralMin": 5.5, "umbralMax": 7.5 },
+        "CO2":         { "umbralMin": 300, "umbralMax": 1200 },
+        "LUZ":         { "umbralMin": 200, "umbralMax": 800 }
+      }
+    },
+    "alert_severity_calculation": {
+      "description": "Severidad calculada según desviación porcentual del rango",
+      "formula": "desviacion = |valor - umbral| / (umbralMax - umbralMin)",
+      "thresholds": {
+        "BAJA":   "desviacion <= 0.10",
+        "MEDIA":  "0.10 < desviacion <= 0.25",
+        "ALTA":   "0.25 < desviacion <= 0.50",
+        "CRITICA":"desviacion > 0.50"
+      }
+    },
+    "harvest_scheduler": {
+      "description": "CosechaAlertaScheduler evalúa plantas activas cada 6 horas",
+      "cron": "0 0 0/6 * * ?",
+      "categories": {
+        "COSECHA_PROXIMA":    { "severidad": "BAJA",   "condicion": "diasRestantes entre 1 y 7" },
+        "COSECHA_LISTA":      { "severidad": "MEDIA",  "condicion": "diasRestantes entre -3 y 0" },
+        "COSECHA_VENCIDA":    { "severidad": "ALTA",   "condicion": "diasRestantes entre -7 y -4" },
+        "COSECHA_MUY_VENCIDA":{ "severidad": "CRITICA","condicion": "diasRestantes < -7" }
+      },
+      "deduplication": "Usa [PLT-{id}] en descripción para no crear alertas duplicadas"
+    }
+  },
 
   "roles": {
     "ADMINISTRADOR": {

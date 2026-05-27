@@ -108,6 +108,19 @@ public class DataInitializer implements CommandLineRunner {
             .fechaIngreso(LocalDate.of(2025, 1, 20))
             .build());
 
+        // Usuario genérico con rol EMPLEADO para pruebas automatizadas (Python/Selenium)
+        empleadoRepo.save(Empleado.builder()
+            .nombreCompleto("Empleado Test")
+            .email("empleado@greenhouse.com")
+            .passwordHash(passwordEncoder.encode("Empleado1234"))
+            .rol(Empleado.RolEmpleado.EMPLEADO)
+            .estado(Empleado.EstadoEmpleado.ACTIVO)
+            .emailVerificado(true)
+            .authProvider(Empleado.AuthProvider.LOCAL)
+            .telefono("3001112233")
+            .fechaIngreso(LocalDate.of(2025, 6, 1))
+            .build());
+
         // ── Zonas ──
         Zona zonaA = zonaRepo.save(Zona.builder()
             .nombre("Zona A - Tomates").dimensionM2(120.0).capacidadMaxPlantas(200)

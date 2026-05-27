@@ -53,19 +53,24 @@ class TestRBACUI:
         assert found_role, \
             "El badge de rol del usuario no es visible en el sidebar"
 
-    def test_unauthenticated_redirect_to_login(self, driver):
+    def test_unauthenticated_redirect_to_login(self):
         """
         HU-31 — Sin sesión activa, el acceso a rutas protegidas redirige al login.
         Criterio: Navegar a /dashboard sin autenticarse debe llevar a /login.
+        NOTA: Usa un driver AISLADO (no la sesión compartida) para no romper los tests posteriores.
         """
-        # Use a fresh driver that is NOT authenticated
-        driver.delete_all_cookies()
-        driver.get(f"{BASE_URL}/dashboard")
-        time.sleep(3)
-
-        # Should redirect to /login
-        assert "/login" in driver.current_url, \
-            f"Se esperaba redirección a /login, pero la URL es: {driver.current_url}"
+        import sys, os
+        sys.path.insert(0, os.path.dirname(__file__))
+        from conftest import get_driver
+        isolated_driver = get_driver(headless=True)
+        isolated_driver.implicitly_wait(10)
+        try:
+            isolated_driver.get(f"{BASE_URL}/dashboard")
+            time.sleep(3)
+            assert "/login" in isolated_driver.current_url, \
+                f"Se esperaba redirección a /login, pero la URL es: {isolated_driver.current_url}"
+        finally:
+            isolated_driver.quit()
 
     def test_admin_can_access_empleados_page(self, authenticated_driver):
         """

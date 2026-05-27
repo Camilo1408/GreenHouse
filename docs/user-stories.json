@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12",
   "title": "GreenHouse Manager — Historias de Usuario",
   "description": "Listado completo de historias de usuario para importar en Taiga",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "project": "greenhouse-manager",
   "date": "2026-05-27",
   "note": "Para importar en Taiga: usa el slug del proyecto configurado en TAIGA_PROJECT_SLUG",
@@ -154,23 +154,25 @@
             "Los tipos de sensor son: TEMPERATURA, HUMEDAD, PH, CO2, LUZ",
             "Se puede configurar umbralMin y umbralMax por sensor",
             "Al superar los umbrales con una lectura se genera alerta automática",
-            "Se puede filtrar sensores por zona"
+            "Se puede filtrar sensores por zona con GET /api/sensores/zona/{id}"
           ],
           "points": 5,
           "tags": ["sensores", "crud", "alertas"]
         },
         {
           "ref": "HU-11",
-          "subject": "Registro de lecturas de sensores",
-          "description": "Como empleado, quiero registrar lecturas manuales de los sensores para complementar el monitoreo automático.",
+          "subject": "Registro de lecturas de sensores con alerta automática",
+          "description": "Como empleado, quiero registrar lecturas manuales de los sensores y que el sistema genere alertas automáticas si el valor está fuera de rango.",
           "acceptance_criteria": [
             "Se puede registrar una lectura con sensor, valor, unidad y fecha",
             "La fuente puede ser AUTOMATICA o MANUAL",
-            "Si el valor está fuera de rango se crea una alerta automáticamente",
+            "Si el valor está por encima de umbralMax se crea una alerta automáticamente",
+            "Si el valor está por debajo de umbralMin se crea una alerta automáticamente",
+            "La severidad de la alerta se calcula según la desviación del rango",
             "Se puede consultar el historial de lecturas por sensor"
           ],
-          "points": 3,
-          "tags": ["lecturas", "sensores", "monitoreo"]
+          "points": 5,
+          "tags": ["lecturas", "sensores", "monitoreo", "alertas-auto"]
         },
         {
           "ref": "HU-12",
@@ -347,7 +349,7 @@
           "tags": ["i18n", "ux", "frontend"]
         },
         {
-          "ref": "HU-34",
+          "ref": "HU-37",
           "subject": "Selector de idioma visible en toda la aplicación",
           "description": "Como usuario, quiero que el selector de idioma esté accesible desde cualquier página del sistema.",
           "acceptance_criteria": [
@@ -357,6 +359,59 @@
           ],
           "points": 2,
           "tags": ["i18n", "ux", "sidebar"]
+        }
+      ]
+    },
+    {
+      "sprint": 5,
+      "name": "Sensores Avanzados y Alertas de Cosecha",
+      "stories": [
+        {
+          "ref": "HU-34",
+          "subject": "Creación de sensores inline al crear o editar zonas",
+          "description": "Como supervisor o administrador, quiero poder crear los sensores de una zona directamente desde el formulario de creación/edición de zona para agilizar la configuración inicial.",
+          "acceptance_criteria": [
+            "El formulario de crear zona incluye una sección 'Sensores de esta zona'",
+            "Se pueden agregar filas de sensor con tipo, código, umbralMin y umbralMax",
+            "Al seleccionar el tipo de sensor los umbrales se pre-llenan con valores por defecto",
+            "Al guardar la zona, primero se crea la zona y luego se crean los sensores en secuencia",
+            "En modo edición se muestran los sensores ya configurados como badges de solo lectura",
+            "La sección de sensores es opcional (la zona se guarda aunque no se añadan sensores)"
+          ],
+          "points": 8,
+          "tags": ["zonas", "sensores", "ux", "frontend", "backend"]
+        },
+        {
+          "ref": "HU-35",
+          "subject": "Alertas automáticas por valor de sensor fuera de umbral",
+          "description": "Como sistema, quiero generar alertas automáticas cuando una lectura de sensor supera los umbrales configurados para notificar al equipo de forma inmediata.",
+          "acceptance_criteria": [
+            "Al registrar POST /api/lecturas, si valor > umbralMax se crea alerta PENDIENTE",
+            "Si valor < umbralMin también se crea alerta PENDIENTE",
+            "El tipo de alerta es UMBRAL_{TIPO_SENSOR} (ej: UMBRAL_TEMPERATURA)",
+            "La severidad es BAJA (<10%), MEDIA (10-25%), ALTA (25-50%), CRITICA (>50% de desviación)",
+            "La alerta incluye sensor, zona y descripción con valores concretos",
+            "Lecturas dentro del rango NO generan alertas"
+          ],
+          "points": 5,
+          "tags": ["alertas-auto", "sensores", "backend", "scheduler"]
+        },
+        {
+          "ref": "HU-36",
+          "subject": "Alertas automáticas de cosecha pendiente por scheduler",
+          "description": "Como sistema, quiero generar alertas automáticas cuando una planta esté próxima a su fecha estimada de cosecha o ya haya sobrepasado ese tiempo.",
+          "acceptance_criteria": [
+            "El scheduler evalúa todas las plantas activas cada 6 horas",
+            "COSECHA_PROXIMA (BAJA): faltan ≤7 días para la cosecha estimada",
+            "COSECHA_LISTA (MEDIA): el día de cosecha es hoy o hasta 3 días de retraso",
+            "COSECHA_VENCIDA (ALTA): 4 a 7 días de retraso",
+            "COSECHA_MUY_VENCIDA (CRITICA): más de 7 días sin cosechar",
+            "No se duplican alertas: si ya existe una PENDIENTE del mismo tipo para la misma planta no se crea otra",
+            "La planta se actualiza automáticamente a LISTA_PARA_COSECHAR cuando la cosecha está lista o vencida",
+            "Las alertas de cosecha aparecen en /alertas con descripción que incluye la planta y zona"
+          ],
+          "points": 8,
+          "tags": ["alertas-auto", "cosecha", "scheduler", "backend"]
         }
       ]
     }
@@ -373,6 +428,8 @@
       "6. Asigna los 'tags' como etiquetas en Taiga",
       "7. Asigna los 'points' como puntos de historia"
     ],
-    "slug": "cesar_camilo-greenhouse-manager"
+    "slug": "cesar_camilo-greenhouse-manager",
+    "total_stories": 37,
+    "total_points": 133
   }
 }

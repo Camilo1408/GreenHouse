@@ -22,7 +22,7 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_DB: greenhouse_test
+          POSTGRES_DB: greenhouse_db
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports:
@@ -46,7 +46,9 @@ jobs:
 
       - name: Ejecutar pruebas JUnit
         working-directory: greenhouse-backend
-        run: mvn test -Dspring.profiles.active=test
+        # El perfil 'test' usa H2 en memoria (src/test/resources/application-test.properties)
+        # Los tests de servicio son Mockito puro y no necesitan base de datos real
+        run: mvn test -Dspring.profiles.active=test -B
         env:
           GOOGLE_CLIENT_ID: test-client-id
           GOOGLE_CLIENT_SECRET: test-client-secret
@@ -202,7 +204,8 @@ jobs:
 
       - name: Ejecutar pruebas Python
         working-directory: tests-python
-        run: pytest -v --html=report.html --self-contained-html
+        # Excluye test_taiga_integration (requiere credenciales externas → se ejecuta en job taiga-validation)
+        run: pytest test_zonas.py test_plantas.py test_alertas.py test_sensores.py -v --html=report.html --self-contained-html
 
       - name: Publicar reporte Python
         uses: actions/upload-artifact@v4
@@ -326,6 +329,12 @@ jobs:
         env:
           CHROMEDRIVER_PATH: ${{ steps.setup-chrome.outputs.chromedriver-path }}
 
+      - name: Ejecutar tests Selenium — Sensores (HU-34, HU-35, HU-36)
+        working-directory: tests-selenium
+        run: pytest test_sensores_ui.py -v --html=report-sensores.html --self-contained-html
+        env:
+          CHROMEDRIVER_PATH: ${{ steps.setup-chrome.outputs.chromedriver-path }}
+
       - name: Publicar reportes Selenium
         uses: actions/upload-artifact@v4
         if: always()
@@ -335,6 +344,7 @@ jobs:
             tests-selenium/report-dashboard.html
             tests-selenium/report-crud.html
             tests-selenium/report-features.html
+            tests-selenium/report-sensores.html
 
   # ─────────────────────────────────────────
   # 6. Validación de Historias de Usuario con Taiga

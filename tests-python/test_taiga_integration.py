@@ -36,16 +36,21 @@ REQUIRED_USER_STORIES = [
     "Monitoreo de alertas generadas por sensores",
     "Registro de cosechas con calidad y destino",
     "Gestión de empleados y roles",
+    "Gestión de sensores por zona",
+    "Registro de lecturas de sensores con alerta automática",
     # ── Sprint 3: RBAC y Control de acceso ───────────────────────────────────
     "Control de acceso por roles RBAC",
     "Administrador gestiona empleados exclusivamente",
     "Supervisor crea y edita zonas y plantas sin eliminar",
-    "Empleado reporta novedades y actualiza cosechas",
+    "Empleado actualiza estados de alertas y cosechas",
     # ── Sprint 4: Novedades e i18n ────────────────────────────────────────────
     "Reporte de novedad por enfermedad en planta",
     "Reporte de falla de sistema en zona",
     "Interfaz multiidioma español e inglés",
-    "Selector de idioma visible en toda la aplicación",
+    # ── Sprint 5: Sensores avanzados y alertas de cosecha ─────────────────────
+    "Creación de sensores inline al crear o editar zonas",
+    "Alertas automáticas por valor de sensor fuera de umbral",
+    "Alertas automáticas de cosecha pendiente por scheduler",
 ]
 
 
@@ -451,3 +456,83 @@ class TestCriteriosAceptacion:
             f"El endpoint GET /api/sensores no responde: {resp.status_code}"
         data = resp.json()
         assert isinstance(data, list), "Se esperaba una lista de sensores"
+
+    # ── Sprint 5: Sensores avanzados y alertas de cosecha ─────────────────────
+
+    def test_ca_sensor_creation_for_zone(self, api_session):
+        """
+        CA-HU34: Se puede crear un sensor y asignarlo a una zona.
+        Mapeado a: HU-34 'Creación de sensores inline al crear o editar zonas'
+        """
+        zonas_resp = api_session.get(f"{API_BASE}/api/zonas")
+        if zonas_resp.status_code != 200 or not zonas_resp.json():
+            pytest.skip("No hay zonas disponibles para crear sensor")
+
+        zona_id = zonas_resp.json()[0]["id"]
+        payload = {
+            "codigo": "SENS-TAIGA-01",
+            "tipoSensor": "HUMEDAD",
+            "zona": {"id": zona_id},
+            "estado": "ACTIVO",
+            "fechaInstalacion": "2026-01-01",
+            "umbralMin": 40.0,
+            "umbralMax": 80.0
+        }
+        resp = api_session.post(f"{API_BASE}/api/sensores", json=payload)
+        assert resp.status_code in [200, 201], \
+            f"POST /api/sensores falló: {resp.status_code} — {resp.text}"
+        data = resp.json()
+        assert "id" in data
+        assert data.get("tipoSensor") == "HUMEDAD"
+        assert data.get("umbralMin") == 40.0
+
+    def test_ca_sensor_out_of_range_generates_alert(self, api_session):
+        """
+        CA-HU35: Una lectura fuera de umbral genera alerta automática.
+        Mapeado a: HU-35 'Alertas automáticas por valor de sensor fuera de umbral'
+        """
+        sensores_resp = api_session.get(f"{API_BASE}/api/sensores")
+        if sensores_resp.status_code != 200 or not sensores_resp.json():
+            pytest.skip("No hay sensores disponibles para esta prueba")
+
+        # Buscar un sensor con umbrales definidos
+        sensor = next(
+            (s for s in sensores_resp.json()
+             if s.get("umbralMin") is not None and s.get("umbralMax") is not None),
+            None
+        )
+        if sensor is None:
+            pytest.skip("No hay sensores con umbrales configurados")
+
+        prev_resp = api_session.get(f"{API_BASE}/api/alertas/count/pendientes")
+        prev_count = prev_resp.json().get("total", 0) if prev_resp.status_code == 200 else 0
+
+        # Registrar lectura extrema (1000 veces el máximo)
+        valor_extremo = (sensor["umbralMax"] or 100) * 10
+        lectura_resp = api_session.post(f"{API_BASE}/api/lecturas", json={
+            "sensor": {"id": sensor["id"]},
+            "valor": valor_extremo,
+            "unidad": "test"
+        })
+        assert lectura_resp.status_code in [200, 201], \
+            f"POST /api/lecturas falló: {lectura_resp.status_code}"
+
+        new_resp = api_session.get(f"{API_BASE}/api/alertas/count/pendientes")
+        new_count = new_resp.json().get("total", 0) if new_resp.status_code == 200 else 0
+        assert new_count > prev_count, \
+            "Una lectura fuera de umbral debe generar al menos 1 alerta pendiente (HU-35)"
+
+    def test_ca_sensores_por_zona_endpoint(self, api_session):
+        """
+        CA-HU34: El endpoint GET /api/sensores/zona/{id} filtra sensores por zona.
+        Mapeado a: HU-34 'Creación de sensores inline al crear o editar zonas'
+        """
+        zonas_resp = api_session.get(f"{API_BASE}/api/zonas")
+        if zonas_resp.status_code != 200 or not zonas_resp.json():
+            pytest.skip("No hay zonas disponibles")
+
+        zona_id = zonas_resp.json()[0]["id"]
+        resp = api_session.get(f"{API_BASE}/api/sensores/zona/{zona_id}")
+        assert resp.status_code == 200, \
+            f"GET /api/sensores/zona/{zona_id} falló: {resp.status_code}"
+        assert isinstance(resp.json(), list), "Se esperaba una lista de sensores"

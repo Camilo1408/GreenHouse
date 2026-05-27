@@ -25,6 +25,8 @@ import static org.mockito.Mockito.*;
 class AlertaServiceTest {
 
     @Mock private AlertaRepository alertaRepository;
+    @Mock private EmpleadoRepository empleadoRepository;
+    @Mock private ZonaRepository zonaRepository;
     @InjectMocks private AlertaService alertaService;
 
     private Alerta alertaPendiente;
@@ -97,5 +99,48 @@ class AlertaServiceTest {
     void countPendientes_debeRetornarTotal() {
         when(alertaRepository.countByEstado(Alerta.EstadoAlerta.PENDIENTE)).thenReturn(5L);
         assertThat(alertaService.countPendientes()).isEqualTo(5L);
+    }
+
+    @Test
+    @DisplayName("crearManual debe crear alerta con tipo y zona correctos")
+    void crearManual_debePersistirAlerta() {
+        when(zonaRepository.findById(1L)).thenReturn(Optional.of(zona));
+        when(alertaRepository.save(any())).thenAnswer(inv -> {
+            Alerta a = inv.getArgument(0);
+            a.setId(99L);
+            return a;
+        });
+
+        Alerta result = alertaService.crearManual(
+                1L, "FALLA_SISTEMA", Alerta.Severidad.MEDIA,
+                "Falla detectada en zona A", null);
+
+        assertThat(result.getTipo()).isEqualTo("FALLA_SISTEMA");
+        assertThat(result.getSeveridad()).isEqualTo(Alerta.Severidad.MEDIA);
+        assertThat(result.getEstado()).isEqualTo(Alerta.EstadoAlerta.PENDIENTE);
+        assertThat(result.getZona()).isEqualTo(zona);
+        verify(alertaRepository).save(any(Alerta.class));
+    }
+
+    @Test
+    @DisplayName("crearManual con zona inexistente debe lanzar ResourceNotFoundException")
+    void crearManual_zonaNoExistente_debeLanzarExcepcion() {
+        when(zonaRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> alertaService.crearManual(
+                99L, "FALLA_SISTEMA", Alerta.Severidad.ALTA, "Test", null))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verify(alertaRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("agregarNotas debe actualizar las notas de resolución de la alerta")
+    void agregarNotas_debeActualizarNotas() {
+        when(alertaRepository.findById(1L)).thenReturn(Optional.of(alertaPendiente));
+        when(alertaRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Alerta result = alertaService.agregarNotas(1L, "Se revisó el sensor", null);
+
+        assertThat(result.getNotasResolucion()).isEqualTo("Se revisó el sensor");
+        verify(alertaRepository).save(alertaPendiente);
     }
 }
