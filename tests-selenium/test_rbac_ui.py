@@ -113,31 +113,50 @@ class TestRBACUI:
             assert keyword.lower() in page.lower() or "loading" in page.lower(), \
                 f"La página {path} no cargó correctamente (keyword '{keyword}' no encontrada)"
 
-    def test_logout_clears_session(self, authenticated_driver):
+    def test_logout_clears_session(self):
         """
         HU-29 — El cierre de sesión elimina la sesión activa.
         Criterio: Tras hacer clic en 'Cerrar sesión', la URL cambia a /login.
+
+        NOTA: Usa un driver AISLADO para no romper la sesión compartida de
+        authenticated_driver (que reutilizan todos los demás tests de la suite).
         """
-        driver = authenticated_driver
-        driver.get(f"{BASE_URL}/dashboard")
-        time.sleep(2)
+        import sys
+        import os
+        sys.path.insert(0, os.path.dirname(__file__))
+        from conftest import get_driver, BASE_URL, ADMIN_EMAIL, ADMIN_PASSWORD
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
 
-        # Find logout button
-        logout_buttons = driver.find_elements(
-            By.XPATH, "//*[contains(text(),'Cerrar sesión') or contains(text(),'Logout')]"
-        )
-        if not logout_buttons:
-            # Try to find by href or aria-label
-            logout_buttons = driver.find_elements(
-                By.XPATH, "//button[contains(., 'Cerrar') or contains(., 'Logout')]"
+        isolated_driver = get_driver(headless=True)
+        isolated_driver.implicitly_wait(10)
+        try:
+            # Login
+            isolated_driver.get(f"{BASE_URL}/login")
+            wait = WebDriverWait(isolated_driver, 15)
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='email']")))
+            isolated_driver.find_element(By.CSS_SELECTOR, "input[type='email']").send_keys(ADMIN_EMAIL)
+            isolated_driver.find_element(By.CSS_SELECTOR, "input[type='password']").send_keys(ADMIN_PASSWORD)
+            isolated_driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+            wait.until(EC.url_contains("/dashboard"))
+
+            # Logout
+            logout_buttons = isolated_driver.find_elements(
+                By.XPATH, "//*[contains(text(),'Cerrar sesión') or contains(text(),'Logout')]"
             )
+            if not logout_buttons:
+                logout_buttons = isolated_driver.find_elements(
+                    By.XPATH, "//button[contains(., 'Cerrar') or contains(., 'Logout')]"
+                )
 
-        if logout_buttons:
+            assert logout_buttons, "No se encontró el botón de cerrar sesión"
             logout_buttons[0].click()
             time.sleep(3)
-            # After logout, should be at /login
-            assert "/login" in driver.current_url, \
-                f"Después del logout, se esperaba /login, pero la URL es: {driver.current_url}"
+
+            assert "/login" in isolated_driver.current_url, \
+                f"Después del logout, se esperaba /login, pero la URL es: {isolated_driver.current_url}"
+        finally:
+            isolated_driver.quit()
 
     def test_novedades_visible_to_all_roles(self, authenticated_driver):
         """

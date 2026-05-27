@@ -1,8 +1,8 @@
 @echo off
 :: ============================================================
-::  GreenHouse Manager - Correr pruebas Python
+::  GreenHouse Manager - Correr pruebas Python y Selenium
 ::  Uso: run-tests.bat
-::  Requiere: backend corriendo en localhost:8080
+::  Requiere: backend en localhost:8080 / frontend en localhost:5173
 :: ============================================================
 
 :: Forzar UTF-8 para que la salida de Python no cause errores de encoding
@@ -13,6 +13,7 @@ setlocal
 
 set ROOT=%~dp0
 set TESTS=%~dp0tests-python
+set SELENIUM=%~dp0tests-selenium
 
 python --version >nul 2>&1
 if errorlevel 1 (
@@ -30,19 +31,21 @@ echo   ==============================================
 echo    GreenHouse Manager - Suite de Pruebas
 echo   ==============================================
 echo.
-echo   Verificando dependencias...
-python -m pip install -q -r "%TESTS%\requirements.txt"
-echo.
-echo   Elige que pruebas correr:
+echo   --- Pruebas de API (backend en localhost:8080) ---
 echo     [1] Pruebas de API        (zonas, plantas, alertas, sensores)
 echo     [2] Integracion con Taiga (historias de usuario)
-echo     [3] Todas las pruebas Python
-echo     [4] Subir historias a Taiga  (taiga-upload.py)
-echo     [5] Limpiar datos de prueba anteriores
+echo     [3] Todas las pruebas de API
+echo.
+echo   --- Pruebas de UI (frontend en localhost:5173) ---
+echo     [4] Pruebas Selenium      (interfaz de usuario con Chrome)
+echo.
+echo   --- Utilidades ---
+echo     [5] Subir historias a Taiga  (taiga-upload.py)
+echo     [6] Limpiar datos de prueba anteriores
 echo     [0] Salir
 echo.
 set CHOICE=
-set /p CHOICE=  Tu eleccion (0-5):
+set /p CHOICE=  Tu eleccion (0-6):
 
 if "%CHOICE%"=="0" goto FIN
 if "%CHOICE%"=="1" goto OPT1
@@ -50,6 +53,7 @@ if "%CHOICE%"=="2" goto OPT2
 if "%CHOICE%"=="3" goto OPT3
 if "%CHOICE%"=="4" goto OPT4
 if "%CHOICE%"=="5" goto OPT5
+if "%CHOICE%"=="6" goto OPT6
 
 echo.
 echo   Opcion invalida. Intenta de nuevo.
@@ -60,6 +64,7 @@ goto MENU
 cd /d "%TESTS%"
 echo.
 echo   Corriendo pruebas de API...
+echo   Requiere: backend en localhost:8080
 echo   Los datos creados se eliminan automaticamente al finalizar.
 echo.
 python -m pytest test_zonas.py test_plantas.py test_alertas.py test_sensores.py -v -s --html=report-api.html --self-contained-html
@@ -72,6 +77,7 @@ goto RESUMEN
 cd /d "%TESTS%"
 echo.
 echo   Corriendo pruebas de Taiga...
+echo   Requiere: backend en localhost:8080
 echo   Los datos creados se eliminan automaticamente al finalizar.
 echo.
 python -m pytest test_taiga_integration.py -v -s --html=report-taiga.html --self-contained-html
@@ -83,16 +89,33 @@ goto RESUMEN
 :OPT3
 cd /d "%TESTS%"
 echo.
-echo   Corriendo todas las pruebas Python...
+echo   Corriendo todas las pruebas de API...
+echo   Requiere: backend en localhost:8080
 echo   Los datos creados se eliminan automaticamente al finalizar.
 echo.
 python -m pytest test_zonas.py test_plantas.py test_alertas.py test_sensores.py test_taiga_integration.py -v -s --html=report-full.html --self-contained-html
 set EXITCODE=%errorlevel%
-set SUITE=Suite completa
+set SUITE=Suite completa de API
 set REPORT=%TESTS%\report-full.html
 goto RESUMEN
 
 :OPT4
+cd /d "%SELENIUM%"
+echo.
+echo   Corriendo pruebas Selenium (interfaz de usuario)...
+echo   Requiere: backend en localhost:8080 Y frontend en localhost:5173
+echo   Chrome se abre en modo headless (sin ventana visible).
+echo.
+echo   Instalando dependencias Selenium...
+python -m pip install -q -r requirements.txt
+echo.
+python -m pytest -v -s
+set EXITCODE=%errorlevel%
+set SUITE=Pruebas Selenium UI
+set REPORT=%SELENIUM%\reporte-selenium.html
+goto RESUMEN
+
+:OPT5
 cd /d "%ROOT%"
 echo.
 echo   Subiendo historias de usuario a Taiga...
@@ -103,7 +126,7 @@ set SUITE=Upload a Taiga
 set REPORT=
 goto RESUMEN
 
-:OPT5
+:OPT6
 cd /d "%TESTS%"
 echo.
 echo   Opciones de limpieza:

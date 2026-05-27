@@ -60,17 +60,24 @@ def authenticated_driver(driver):
     """
     Driver ya autenticado como administrador.
     Realiza el login una sola vez para toda la sesión.
+
+    NOTA: Borra cookies antes de navegar a /login para garantizar que no hay
+    sesión residual de test_auth.py (que corre primero por orden alfabético).
     """
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
 
+    # Elimina sesión anterior si test_auth.py ya hizo login
+    driver.delete_all_cookies()
     driver.get(f"{BASE_URL}/login")
 
     wait = WebDriverWait(driver, 15)
     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='email']")))
 
+    driver.find_element(By.CSS_SELECTOR, "input[type='email']").clear()
     driver.find_element(By.CSS_SELECTOR, "input[type='email']").send_keys(ADMIN_EMAIL)
+    driver.find_element(By.CSS_SELECTOR, "input[type='password']").clear()
     driver.find_element(By.CSS_SELECTOR, "input[type='password']").send_keys(ADMIN_PASSWORD)
     driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
 
