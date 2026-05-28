@@ -22,6 +22,9 @@ export default function LoginPage() {
   const verified = params.get('verified') === 'true'
   const oauthError = params.get('error') === 'oauth'
 
+  const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
+  const BACKEND_BASE = API_BASE.replace(/\/api$/, '')
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -30,7 +33,7 @@ export default function LoginPage() {
       form.append('email', email)
       form.append('password', password)
 
-      await axios.post('/api/auth/login', form, {
+      await axios.post(`${API_BASE}/auth/login`, form, {
         withCredentials: true,
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       })
@@ -126,7 +129,7 @@ export default function LoginPage() {
 
         {/* Google */}
         <a
-          href="/oauth2/authorization/google"
+          href={`${BACKEND_BASE}/oauth2/authorization/google`}
           className="flex items-center justify-center gap-3 w-full border-2 border-gray-200 hover:border-green-400 hover:bg-green-50 text-gray-700 font-semibold py-2.5 px-4 rounded-lg transition-all text-sm"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24">

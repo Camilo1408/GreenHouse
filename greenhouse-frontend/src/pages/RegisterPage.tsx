@@ -28,9 +28,10 @@ export default function RegisterPage() {
       return
     }
 
+    const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
     setLoading(true)
     try {
-      await axios.post('/api/auth/register', {
+      await axios.post(`${API_BASE}/auth/register`, {
         nombreCompleto: form.nombreCompleto,
         email: form.email,
         password: form.password,
@@ -70,7 +71,8 @@ export default function RegisterPage() {
             ¿No recibiste el correo?{' '}
             <button
               onClick={async () => {
-                await axios.post(`/api/auth/resend-verification?email=${form.email}`)
+                const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
+                await axios.post(`${API_BASE}/auth/resend-verification?email=${form.email}`)
                 toast.success('Correo reenviado')
               }}
               className="text-green-700 underline"
