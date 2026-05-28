@@ -56,7 +56,8 @@ export default function PlantasPage() {
 
   // Sub-form para crear nuevo tipo de planta inline
   const [showNuevoTipo, setShowNuevoTipo] = useState(false)
-  const [nuevoTipoForm, setNuevoTipoForm] = useState({ nombre: '', cicloDias: '', descripcion: '' })
+  const emptyNuevoTipo = { nombre: '', cicloDias: '', descripcion: '', temperaturaMin: '15', temperaturaMax: '35', humedadMin: '40', humedadMax: '85' }
+  const [nuevoTipoForm, setNuevoTipoForm] = useState(emptyNuevoTipo)
 
   const { data: plantas = [], isLoading } = useQuery<Planta[]>({
     queryKey: ['plantas'],
@@ -102,16 +103,20 @@ export default function PlantasPage() {
   const createTipo = useMutation({
     mutationFn: () =>
       tipoPlantaService.create({
-        nombre:    nuevoTipoForm.nombre.trim(),
-        cicloDias: Number(nuevoTipoForm.cicloDias),
-        descripcion: nuevoTipoForm.descripcion.trim() || undefined,
+        nombre:         nuevoTipoForm.nombre.trim(),
+        cicloDias:      Number(nuevoTipoForm.cicloDias),
+        descripcion:    nuevoTipoForm.descripcion.trim() || undefined,
+        temperaturaMin: Number(nuevoTipoForm.temperaturaMin) || 15,
+        temperaturaMax: Number(nuevoTipoForm.temperaturaMax) || 35,
+        humedadMin:     Number(nuevoTipoForm.humedadMin) || 40,
+        humedadMax:     Number(nuevoTipoForm.humedadMax) || 85,
       }),
     onSuccess: (res) => {
       const newTipo: TipoPlanta = res.data
       qc.invalidateQueries({ queryKey: ['tiposPlanta'] })
       // Auto-seleccionar el tipo recién creado
       setForm(prev => ({ ...prev, tipoPlantaId: String(newTipo.id ?? '') }))
-      setNuevoTipoForm({ nombre: '', cicloDias: '', descripcion: '' })
+      setNuevoTipoForm(emptyNuevoTipo)
       setShowNuevoTipo(false)
       toast.success(`Tipo "${newTipo.nombre}" creado y seleccionado`)
     },
@@ -153,7 +158,7 @@ export default function PlantasPage() {
         </h1>
         {canWrite && (
           <button
-            onClick={() => { setShowForm(true); setForm(emptyForm); setEditId(null); setShowNuevoTipo(false); setNuevoTipoForm({ nombre: '', cicloDias: '', descripcion: '' }) }}
+            onClick={() => { setShowForm(true); setForm(emptyForm); setEditId(null); setShowNuevoTipo(false); setNuevoTipoForm(emptyNuevoTipo) }}
             className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 text-sm"
           >
             <Plus size={16} /> {t('planta.nueva')}
@@ -214,8 +219,8 @@ export default function PlantasPage() {
                   <p className="text-xs font-semibold text-green-800 uppercase tracking-wide">
                     Crear nuevo tipo de planta
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div className="col-span-2 sm:col-span-1">
                       <label className="text-xs text-gray-600">Nombre *</label>
                       <input
                         id="nuevo-tipo-nombre"
@@ -246,12 +251,60 @@ export default function PlantasPage() {
                         onChange={e => setNuevoTipoForm(prev => ({ ...prev, descripcion: e.target.value }))}
                       />
                     </div>
+                    <div>
+                      <label className="text-xs text-gray-600">Temp. mín (°C)</label>
+                      <input
+                        id="nuevo-tipo-temp-min"
+                        type="number"
+                        className="w-full border rounded-md px-2 py-1.5 mt-0.5 text-sm"
+                        value={nuevoTipoForm.temperaturaMin}
+                        onChange={e => setNuevoTipoForm(prev => ({ ...prev, temperaturaMin: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">Temp. máx (°C)</label>
+                      <input
+                        id="nuevo-tipo-temp-max"
+                        type="number"
+                        className="w-full border rounded-md px-2 py-1.5 mt-0.5 text-sm"
+                        value={nuevoTipoForm.temperaturaMax}
+                        onChange={e => setNuevoTipoForm(prev => ({ ...prev, temperaturaMax: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">Humedad mín (%)</label>
+                      <input
+                        id="nuevo-tipo-humedad-min"
+                        type="number"
+                        className="w-full border rounded-md px-2 py-1.5 mt-0.5 text-sm"
+                        value={nuevoTipoForm.humedadMin}
+                        onChange={e => setNuevoTipoForm(prev => ({ ...prev, humedadMin: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">Humedad máx (%)</label>
+                      <input
+                        id="nuevo-tipo-humedad-max"
+                        type="number"
+                        className="w-full border rounded-md px-2 py-1.5 mt-0.5 text-sm"
+                        value={nuevoTipoForm.humedadMax}
+                        onChange={e => setNuevoTipoForm(prev => ({ ...prev, humedadMax: e.target.value }))}
+                      />
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <button
                       id="btn-crear-tipo"
                       type="button"
-                      disabled={!nuevoTipoForm.nombre.trim() || !nuevoTipoForm.cicloDias || createTipo.isPending}
+                      disabled={
+                        !nuevoTipoForm.nombre.trim() ||
+                        !nuevoTipoForm.cicloDias ||
+                        !nuevoTipoForm.temperaturaMin ||
+                        !nuevoTipoForm.temperaturaMax ||
+                        !nuevoTipoForm.humedadMin ||
+                        !nuevoTipoForm.humedadMax ||
+                        createTipo.isPending
+                      }
                       onClick={() => createTipo.mutate()}
                       className="bg-green-700 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-green-800 disabled:opacity-50"
                     >
@@ -259,7 +312,7 @@ export default function PlantasPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setShowNuevoTipo(false); setNuevoTipoForm({ nombre: '', cicloDias: '', descripcion: '' }) }}
+                      onClick={() => { setShowNuevoTipo(false); setNuevoTipoForm(emptyNuevoTipo) }}
                       className="bg-white border border-gray-300 text-gray-600 px-3 py-1.5 rounded-md text-xs hover:bg-gray-50"
                     >
                       Cancelar
@@ -323,7 +376,7 @@ export default function PlantasPage() {
               {t('common.save')}
             </button>
             <button
-              onClick={() => { setShowForm(false); setForm(emptyForm); setEditId(null); setShowNuevoTipo(false); setNuevoTipoForm({ nombre: '', cicloDias: '', descripcion: '' }) }}
+              onClick={() => { setShowForm(false); setForm(emptyForm); setEditId(null); setShowNuevoTipo(false); setNuevoTipoForm(emptyNuevoTipo) }}
               className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200"
             >
               {t('common.cancel')}

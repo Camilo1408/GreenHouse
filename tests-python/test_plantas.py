@@ -98,13 +98,18 @@ class TestTipoPlantaInlineCreacion:
 
     def test_crear_tipo_planta_inline_minimo(self, auth_session, cleanup_registry):
         """
-        POST /api/tipos-planta con nombre + cicloDias debe retornar 201
+        POST /api/tipos-planta con todos los campos requeridos debe retornar 201
         y devolver el tipo creado con id asignado.
-        (Simula el envío mínimo del sub-form inline de PlantasPage)
+        (Simula el envío del sub-form inline de PlantasPage con valores por defecto
+         para temperatura y humedad — todos obligatorios según la entidad TipoPlanta)
         """
         payload = {
-            "nombre":    f"Tipo Inline Test {_TS}",
-            "cicloDias": 75,
+            "nombre":         f"Tipo Inline Test {_TS}",
+            "cicloDias":      75,
+            "temperaturaMin": 15.0,
+            "temperaturaMax": 35.0,
+            "humedadMin":     40.0,
+            "humedadMax":     85.0,
         }
         r = auth_session.post(BASE_TIPOS, json=payload)
         assert r.status_code == 201, f"Se esperaba 201, se obtuvo {r.status_code}: {r.text}"
@@ -117,13 +122,17 @@ class TestTipoPlantaInlineCreacion:
 
     def test_crear_tipo_planta_inline_con_descripcion(self, auth_session, cleanup_registry):
         """
-        POST /api/tipos-planta con nombre + cicloDias + descripcion debe retornar 201.
-        (Simula el envío opcional con descripción desde el sub-form inline)
+        POST /api/tipos-planta con nombre + cicloDias + descripcion + temp/humedad debe retornar 201.
+        (Simula el envío completo desde el sub-form inline)
         """
         payload = {
-            "nombre":      f"Tipo Desc Test {_TS}",
-            "cicloDias":   45,
-            "descripcion": "Variedad de prueba para CI",
+            "nombre":         f"Tipo Desc Test {_TS}",
+            "cicloDias":      45,
+            "descripcion":    "Variedad de prueba para CI",
+            "temperaturaMin": 18.0,
+            "temperaturaMax": 30.0,
+            "humedadMin":     50.0,
+            "humedadMax":     80.0,
         }
         r = auth_session.post(BASE_TIPOS, json=payload)
         assert r.status_code == 201, f"Se esperaba 201, se obtuvo {r.status_code}: {r.text}"

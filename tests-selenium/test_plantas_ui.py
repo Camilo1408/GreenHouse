@@ -148,16 +148,15 @@ class TestPlantasUI:
 
         # El sub-formulario debe cerrarse y el select debe tener el nuevo tipo seleccionado
         page = driver.page_source
-        # Verificar que el sub-formulario ya no está visible o que el select tiene el tipo
         tipo_select = driver.find_element(By.ID, "tipo-planta-select")
-        selected_text = tipo_select.find_element(
-            By.XPATH, "option[@value='" + tipo_select.get_attribute("value") + "']"
-        ).text if tipo_select.get_attribute("value") else ""
+        selected_value = tipo_select.get_attribute("value") or ""
 
+        # El nombre del tipo creado debe aparecer en la página (en el select refrescado)
+        # O el select debe tener un valor distinto de vacío/"__nuevo__"
         assert (
             nombre_unico in page or
-            tipo_select.get_attribute("value") not in ("", "__nuevo__")
-        ), f"El nuevo tipo '{nombre_unico}' no fue auto-seleccionado. Page: {page[:300]}"
+            selected_value not in ("", "__nuevo__")
+        ), f"El nuevo tipo '{nombre_unico}' no fue auto-seleccionado. valor={selected_value}. Page: {page[:400]}"
 
     def test_navigation_to_plantas_from_sidebar(self, authenticated_driver):
         """
