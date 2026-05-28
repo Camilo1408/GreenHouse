@@ -18,8 +18,9 @@ export default function Layout() {
     i18n.changeLanguage(i18n.language === 'es' ? 'en' : 'es')
 
   const handleLogout = async () => {
+    const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
     try {
-      await fetch('/api/auth/logout', {
+      await fetch(`${API_BASE}/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       })
