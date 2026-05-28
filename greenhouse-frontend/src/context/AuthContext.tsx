@@ -43,7 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Use raw axios (not the api instance) so the 401 interceptor does NOT
     // fire here — a 401 on /auth/me simply means the user is not logged in yet,
     // and PrivateRoute is responsible for the redirect.
-    axios.get('/api/auth/me', { withCredentials: true })
+    const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
+    axios.get(`${API_BASE}/auth/me`, { withCredentials: true })
       .then(r => {
         if (r.data?.exito) {
           setUser({ email: r.data.email, rol: r.data.rol })

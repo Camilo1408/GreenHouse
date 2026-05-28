@@ -16,8 +16,9 @@ export default function PrivateRoute() {
   const [status, setStatus] = useState<'checking' | 'auth' | 'unauth'>('checking')
 
   useEffect(() => {
-    axios.get('/api/auth/me', { withCredentials: true })
-      .then(() => setStatus('auth'))
+    const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
+    axios.get(`${API_BASE}/auth/me`, { withCredentials: true })
+      .then(r => setStatus(r.data?.exito ? 'auth' : 'unauth'))
       .catch(() => setStatus('unauth'))
   }, [])
 
