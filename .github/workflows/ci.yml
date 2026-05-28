@@ -368,8 +368,6 @@ jobs:
     name: Taiga - Validación Historias de Usuario
     runs-on: ubuntu-latest
     needs: [python-api-tests]
-    # Continúa aunque Taiga no esté configurado (variables opcionales)
-    continue-on-error: true
 
     services:
       postgres:
