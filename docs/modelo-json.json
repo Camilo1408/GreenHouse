@@ -2,10 +2,87 @@
   "$schema": "https://json-schema.org/draft/2020-12",
   "title": "GreenHouse Manager — Modelo de Datos JSON",
   "description": "Esquema completo de las entidades del sistema de gestión de invernaderos",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "authors": ["[Nombres del equipo]"],
-  "date": "2026-05-27",
+  "date": "2026-05-28",
+  "generacion_scripts": {
+    "descripcion": "Scripts Python que regeneran el proyecto completo desde este modelo JSON",
+    "directorio": "scripts/",
+    "scripts": {
+      "00_generar_todo.py": {
+        "descripcion": "Orquestador principal. Ejecuta los 6 scripts en orden.",
+        "uso": "python scripts/00_generar_todo.py"
+      },
+      "01_generar_backend.py": {
+        "descripcion": "Genera toda la estructura Spring Boot: entities, repositories, services, controllers, config, scheduler, pom.xml, application.properties",
+        "genera": [
+          "greenhouse-backend/pom.xml",
+          "greenhouse-backend/src/main/resources/application.properties",
+          "greenhouse-backend/src/main/java/com/greenhouse/GreenhouseApplication.java",
+          "greenhouse-backend/src/main/java/com/greenhouse/entity/*.java  (1 por entidad)",
+          "greenhouse-backend/src/main/java/com/greenhouse/repository/*.java",
+          "greenhouse-backend/src/main/java/com/greenhouse/service/*.java",
+          "greenhouse-backend/src/main/java/com/greenhouse/controller/*.java",
+          "greenhouse-backend/src/main/java/com/greenhouse/scheduler/CosechaAlertaScheduler.java",
+          "greenhouse-backend/src/main/java/com/greenhouse/exception/GlobalExceptionHandler.java"
+        ],
+        "uso": "python scripts/01_generar_backend.py"
+      },
+      "02_generar_frontend.py": {
+        "descripcion": "Genera la estructura React + Vite: types.ts, api.ts, App.tsx, Layout.tsx, i18n/index.ts, package.json, vite.config.ts",
+        "genera": [
+          "greenhouse-frontend/package.json",
+          "greenhouse-frontend/vite.config.ts",
+          "greenhouse-frontend/src/types.ts  (interfaces TypeScript por entidad)",
+          "greenhouse-frontend/src/services/api.ts  (servicios CRUD + taigaService)",
+          "greenhouse-frontend/src/App.tsx  (rutas protegidas)",
+          "greenhouse-frontend/src/components/layout/Layout.tsx  (sidebar con RBAC)",
+          "greenhouse-frontend/src/i18n/index.ts  (español e inglés)"
+        ],
+        "uso": "python scripts/02_generar_frontend.py"
+      },
+      "03_generar_bd.py": {
+        "descripcion": "Genera el schema DDL de PostgreSQL y el seed de datos de prueba equivalente al DataInitializer.java",
+        "genera": [
+          "docs/sql/01_schema.sql  (CREATE TABLE por cada entidad + índices)",
+          "docs/sql/02_seed.sql    (INSERT datos de prueba: empleados, zonas, tipos, plantas, sensores, lecturas, alertas, cosechas, tratamientos)",
+          "docker-compose.yml      (PostgreSQL 15 con volumen persistente)"
+        ],
+        "uso": "python scripts/03_generar_bd.py"
+      },
+      "04_generar_documentacion.py": {
+        "descripcion": "Genera la documentación técnica completa del proyecto",
+        "genera": [
+          "docs/README.md              (guía de instalación y uso)",
+          "docs/api-reference.md       (referencia de todos los endpoints REST)",
+          "docs/arquitectura.md        (diagrama de capas + decisiones de diseño)",
+          "docs/javadoc-instrucciones.md"
+        ],
+        "nota_javadoc": "El JavaDoc HTML se genera manualmente con: cd greenhouse-backend && mvn javadoc:javadoc",
+        "uso": "python scripts/04_generar_documentacion.py"
+      },
+      "05_generar_diccionario_datos.py": {
+        "descripcion": "Genera el diccionario de datos completo en Markdown desde este modelo JSON",
+        "genera": [
+          "docs/diccionario-datos.md  (tablas, columnas, tipos PG, restricciones, RBAC, relaciones, índices)"
+        ],
+        "uso": "python scripts/05_generar_diccionario_datos.py"
+      },
+      "06_ejecutar_aplicacion.py": {
+        "descripcion": "Orquesta el arranque local completo: PostgreSQL (Docker) + backend Spring Boot + frontend Vite. Health check automático. Apagado limpio con Ctrl+C.",
+        "prerrequisitos": ["Java 17+", "Maven 3.9+", "Node.js 20+", "PostgreSQL 15 o Docker", ".env configurado"],
+        "urls_resultado": {
+          "frontend": "http://localhost:5173",
+          "backend":  "http://localhost:8080",
+          "swagger":  "http://localhost:8080/swagger-ui.html",
+          "health":   "http://localhost:8080/actuator/health"
+        },
+        "uso": "python scripts/06_ejecutar_aplicacion.py"
+      }
+    }
+  },
   "changelog": [
+    "v3.1.0 — Scripts Python de generación completa del proyecto desde modelo-json.json",
     "v3.0.0 — Zona: creación de sensores inline desde el formulario de zona (HU-34)",
     "v3.0.0 — LecturaSensor: generación automática de alertas por umbral con severidad calculada (HU-35)",
     "v3.0.0 — CosechaAlertaScheduler: alertas automáticas de cosecha cada 6h (HU-36)",
