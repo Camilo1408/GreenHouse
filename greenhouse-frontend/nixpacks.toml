@@ -11,4 +11,4 @@ cmds = ["npm install"]
 cmds = ["npm run build"]
 
 [start]
-cmd = "serve -s dist -l $PORT"
+cmd = "serve -s dist -l ${PORT:-3000}"
