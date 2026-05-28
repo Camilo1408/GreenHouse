@@ -441,3 +441,47 @@ jobs:
         with:
           name: taiga-validation-report
           path: tests-python/reporte-taiga.html
+
+  # ─────────────────────────────────────────
+  # 7. Deploy a Railway (solo en main)
+  # ─────────────────────────────────────────
+  deploy-railway:
+    name: Deploy a Railway
+    runs-on: ubuntu-latest
+    needs: [backend-build, frontend-build, python-api-tests, selenium-tests]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Deploy backend y frontend a Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          COMMIT_SHA="${{ github.sha }}"
+          ENV_ID="308b0222-ce0a-4c59-bcb6-be4ea31da645"
+          BACKEND_ID="d03cd891-a249-4249-9cbe-1dfc48668f76"
+          FRONTEND_ID="c7ebc656-1de3-478c-9e08-c271379bd19a"
+          API="https://backboard.railway.app/graphql/v2"
+
+          echo "Desplegando backend (commit: $COMMIT_SHA)..."
+          BACKEND_DEPLOY=$(curl -s -X POST "$API" \
+            -H "Authorization: Bearer $RAILWAY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"mutation { serviceInstanceDeployV2(commitSha: \\\"$COMMIT_SHA\\\", environmentId: \\\"$ENV_ID\\\", serviceId: \\\"$BACKEND_ID\\\") }\"}" \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data',{}).get('serviceInstanceDeployV2','ERROR'))")
+          echo "Backend deployment ID: $BACKEND_DEPLOY"
+
+          echo "Desplegando frontend (commit: $COMMIT_SHA)..."
+          FRONTEND_DEPLOY=$(curl -s -X POST "$API" \
+            -H "Authorization: Bearer $RAILWAY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"mutation { serviceInstanceDeployV2(commitSha: \\\"$COMMIT_SHA\\\", environmentId: \\\"$ENV_ID\\\", serviceId: \\\"$FRONTEND_ID\\\") }\"}" \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data',{}).get('serviceInstanceDeployV2','ERROR'))")
+          echo "Frontend deployment ID: $FRONTEND_DEPLOY"
+
+          echo ""
+          echo "✅ Despliegue iniciado en Railway"
+          echo "🌐 Backend: https://greenhouse-backend-production-c720.up.railway.app"
+          echo "🌐 Frontend: https://greenhouse-frontend-production.up.railway.app"
