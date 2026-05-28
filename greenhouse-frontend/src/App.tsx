@@ -17,6 +17,7 @@ import AlertasPage from './pages/AlertasPage'
 import CosechasPage from './pages/CosechasPage'
 import EmpleadosPage from './pages/EmpleadosPage'
 import NovedadesPage from './pages/NovedadesPage'
+import TaigaPage from './pages/TaigaPage'
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="cosechas"         element={<CosechasPage />} />
           <Route path="empleados"        element={<EmpleadosPage />} />
           <Route path="novedades"        element={<NovedadesPage />} />
+          <Route path="taiga"            element={<TaigaPage />} />
         </Route>
       </Route>
 

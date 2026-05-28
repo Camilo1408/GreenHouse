@@ -238,4 +238,18 @@ export const tratamientoService = {
   delete: (id: number) => api.delete(`/tratamientos/${id}`),
 }
 
+/**
+ * Servicio proxy para historias de usuario de Taiga.
+ * Solo accesible para usuarios con rol ADMINISTRADOR.
+ * Corresponde a los endpoints bajo `/api/taiga`.
+ */
+export const taigaService = {
+  /**
+   * Retorna todas las historias de usuario del proyecto Taiga.
+   * El backend autentica con Taiga y cachea el token 23h.
+   * Devuelve 503 si las credenciales no están configuradas o si Taiga no responde.
+   */
+  getHistorias: () => api.get('/taiga/historias'),
+}
+
 export default api

@@ -6,7 +6,7 @@
 import { Outlet, NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
-  LayoutDashboard, Map, Leaf, Bell, Wheat, Users, LogOut, Globe, Activity, AlertTriangle
+  LayoutDashboard, Map, Leaf, Bell, Wheat, Users, LogOut, Globe, Activity, AlertTriangle, BookOpen
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
@@ -42,6 +42,7 @@ export default function Layout() {
     { to: '/cosechas',   icon: <Wheat size={18} />,          label: t('nav.cosechas'),   adminOnly: false },
     { to: '/novedades',  icon: <AlertTriangle size={18} />, label: t('nav.novedades'),  adminOnly: false },
     { to: '/empleados',  icon: <Users size={18} />,         label: t('nav.empleados'),  adminOnly: true  },
+    { to: '/taiga',      icon: <BookOpen size={18} />,      label: t('nav.taiga'),      adminOnly: true  },
   ].filter(item => !item.adminOnly || isAdmin)
 
   return (
