@@ -87,7 +87,7 @@ export default function Layout() {
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-green-200 hover:bg-green-700 hover:text-white w-full transition-colors"
           >
             <Globe size={18} />
-            {i18n.language === 'es' ? 'English' : 'Español'}
+            {t('common.idioma')}
           </button>
           <button
             onClick={handleLogout}

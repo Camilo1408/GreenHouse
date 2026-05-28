@@ -179,11 +179,11 @@ export default function ZonaDetallePage() {
       qc.invalidateQueries({ queryKey: ['cosechas'] })
       qc.invalidateQueries({ queryKey: ['plantas'] })
       qc.invalidateQueries({ queryKey: ['plantas', 'zona', zonaId] })
-      toast.success('Cosecha registrada ✓')
+      toast.success(t('cosecha.registradaDetalle'))
       setShowCosechaForm(false)
       setCosechaPlantaId(null)
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? 'Error al registrar cosecha'),
+    onError: (err: any) => toast.error(err?.response?.data?.message ?? t('cosecha.errorDetalle')),
   })
 
   const registrarTratamiento = useMutation({
@@ -198,11 +198,11 @@ export default function ZonaDetallePage() {
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tratamientos'] })
-      toast.success('Tratamiento registrado ✓')
+      toast.success(t('tratamiento.registrado'))
       setShowTratForm(false)
       setTratPlantaId(null)
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? 'Error al registrar tratamiento'),
+    onError: (err: any) => toast.error(err?.response?.data?.message ?? t('tratamiento.errorRegistrar')),
   })
 
   const openCosechaForm = (plantaId: number) => {

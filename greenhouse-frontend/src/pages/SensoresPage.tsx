@@ -181,7 +181,7 @@ export default function SensoresPage() {
     mutationFn: (id: number) => sensorService.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['sensores'] })
-      toast.success('Sensor eliminado')
+      toast.success(t('sensor.eliminado'))
     },
   })
 
@@ -199,12 +199,12 @@ export default function SensoresPage() {
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['alertas'] })
       setLastReadings(prev => ({ ...prev, [vars.sensorId]: vars.valor }))
-      toast.success('Lectura registrada ✓ (alertas verificadas)')
+      toast.success(t('sensor.lecturaRegistrada'))
       setSimValor('')
       setSimSensorId(null)
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message ?? 'Error al registrar lectura')
+      toast.error(err?.response?.data?.message ?? t('sensor.errorLectura'))
     },
   })
 
@@ -403,7 +403,7 @@ export default function SensoresPage() {
                       </button>
                     )}
                     {isAdmin && (
-                      <button onClick={() => { if (confirm('¿Eliminar sensor?')) removeSensor.mutate(sensor.id!) }} className="text-red-400 hover:text-red-600 p-1">
+                      <button onClick={() => { if (confirm(t('sensor.confirmarEliminar'))) removeSensor.mutate(sensor.id!) }} className="text-red-400 hover:text-red-600 p-1">
                         <Trash2 size={13} />
                       </button>
                     )}

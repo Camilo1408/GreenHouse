@@ -90,13 +90,13 @@ export default function PlantasPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['plantas'] })
-      toast.success(editId ? 'Planta actualizada' : 'Planta registrada')
+      toast.success(editId ? t('planta.actualizada') : t('planta.registrada'))
       setShowForm(false)
       setForm(emptyForm)
       setEditId(null)
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message ?? 'Error al guardar la planta')
+      toast.error(err?.response?.data?.message ?? t('planta.errorGuardar'))
     },
   })
 
@@ -118,10 +118,10 @@ export default function PlantasPage() {
       setForm(prev => ({ ...prev, tipoPlantaId: String(newTipo.id ?? '') }))
       setNuevoTipoForm(emptyNuevoTipo)
       setShowNuevoTipo(false)
-      toast.success(`Tipo "${newTipo.nombre}" creado y seleccionado`)
+      toast.success(t('planta.tipoCreado', { nombre: newTipo.nombre }))
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message ?? 'Error al crear el tipo de planta')
+      toast.error(err?.response?.data?.message ?? t('planta.errorCrearTipo'))
     },
   })
 
@@ -129,9 +129,9 @@ export default function PlantasPage() {
     mutationFn: (id: number) => plantaService.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['plantas'] })
-      toast.success('Planta eliminada')
+      toast.success(t('planta.eliminada'))
     },
-    onError: () => toast.error('Error al eliminar la planta'),
+    onError: () => toast.error(t('planta.errorEliminar')),
   })
 
   const startEdit = (p: Planta) => {
@@ -178,7 +178,7 @@ export default function PlantasPage() {
                 className="w-full border rounded-lg px-3 py-2 mt-1 text-sm"
                 value={form.codigo}
                 onChange={e => setForm({ ...form, codigo: e.target.value })}
-                placeholder="PL-001"
+                placeholder={t('planta.codigoPlaceholder')}
               />
             </div>
             <div className="md:col-span-2 lg:col-span-3">
@@ -193,23 +193,23 @@ export default function PlantasPage() {
                     if (e.target.value !== '__nuevo__') setShowNuevoTipo(false)
                   }}
                 >
-                  <option value="">— Seleccionar —</option>
+                  <option value="">{t('common.seleccionar')}</option>
                   {tipos.map(tp => (
                     <option key={tp.id} value={tp.id}>
-                      {tp.nombre} ({tp.cicloDias} días)
+                      {tp.nombre} ({tp.cicloDias} {t('common.dias')})
                     </option>
                   ))}
                 </select>
                 <button
                   type="button"
-                  title="Crear nuevo tipo de planta"
+                  title={t('planta.crearTipo')}
                   onClick={() => {
                     setShowNuevoTipo(prev => !prev)
                     if (!showNuevoTipo) setForm(prev => ({ ...prev, tipoPlantaId: '' }))
                   }}
                   className="flex items-center gap-1 bg-green-50 border border-green-300 text-green-700 hover:bg-green-100 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap"
                 >
-                  <PlusCircle size={14} /> Nuevo tipo
+                  <PlusCircle size={14} /> {t('planta.nuevoTipo')}
                 </button>
               </div>
 
@@ -217,42 +217,42 @@ export default function PlantasPage() {
               {showNuevoTipo && (
                 <div className="mt-3 border border-green-200 bg-green-50 rounded-lg p-4 space-y-3">
                   <p className="text-xs font-semibold text-green-800 uppercase tracking-wide">
-                    Crear nuevo tipo de planta
+                    {t('planta.crearTipo')}
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     <div className="col-span-2 sm:col-span-1">
-                      <label className="text-xs text-gray-600">Nombre *</label>
+                      <label className="text-xs text-gray-600">{t('planta.tipoNombre')} *</label>
                       <input
                         id="nuevo-tipo-nombre"
                         className="w-full border rounded-md px-2 py-1.5 mt-0.5 text-sm"
-                        placeholder="Ej: Tomate Cherry"
+                        placeholder={t('planta.tipoNombrePlaceholder')}
                         value={nuevoTipoForm.nombre}
                         onChange={e => setNuevoTipoForm(prev => ({ ...prev, nombre: e.target.value }))}
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-600">Ciclo (días) *</label>
+                      <label className="text-xs text-gray-600">{t('planta.tipoCiclo')} *</label>
                       <input
                         id="nuevo-tipo-ciclo"
                         type="number"
                         min="1"
                         className="w-full border rounded-md px-2 py-1.5 mt-0.5 text-sm"
-                        placeholder="Ej: 90"
+                        placeholder={t('planta.tipoCicloPlaceholder')}
                         value={nuevoTipoForm.cicloDias}
                         onChange={e => setNuevoTipoForm(prev => ({ ...prev, cicloDias: e.target.value }))}
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-600">Descripción</label>
+                      <label className="text-xs text-gray-600">{t('planta.tipoDescripcion')}</label>
                       <input
                         className="w-full border rounded-md px-2 py-1.5 mt-0.5 text-sm"
-                        placeholder="Opcional"
+                        placeholder={t('planta.tipoDescPlaceholder')}
                         value={nuevoTipoForm.descripcion}
                         onChange={e => setNuevoTipoForm(prev => ({ ...prev, descripcion: e.target.value }))}
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-600">Temp. mín (°C)</label>
+                      <label className="text-xs text-gray-600">{t('planta.tipoTempMin')}</label>
                       <input
                         id="nuevo-tipo-temp-min"
                         type="number"
@@ -262,7 +262,7 @@ export default function PlantasPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-600">Temp. máx (°C)</label>
+                      <label className="text-xs text-gray-600">{t('planta.tipoTempMax')}</label>
                       <input
                         id="nuevo-tipo-temp-max"
                         type="number"
@@ -272,7 +272,7 @@ export default function PlantasPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-600">Humedad mín (%)</label>
+                      <label className="text-xs text-gray-600">{t('planta.tipoHumedadMin')}</label>
                       <input
                         id="nuevo-tipo-humedad-min"
                         type="number"
@@ -282,7 +282,7 @@ export default function PlantasPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-600">Humedad máx (%)</label>
+                      <label className="text-xs text-gray-600">{t('planta.tipoHumedadMax')}</label>
                       <input
                         id="nuevo-tipo-humedad-max"
                         type="number"
@@ -308,14 +308,14 @@ export default function PlantasPage() {
                       onClick={() => createTipo.mutate()}
                       className="bg-green-700 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-green-800 disabled:opacity-50"
                     >
-                      {createTipo.isPending ? 'Creando...' : 'Crear y seleccionar'}
+                      {createTipo.isPending ? t('planta.creando') : t('planta.crearYSeleccionar')}
                     </button>
                     <button
                       type="button"
                       onClick={() => { setShowNuevoTipo(false); setNuevoTipoForm(emptyNuevoTipo) }}
                       className="bg-white border border-gray-300 text-gray-600 px-3 py-1.5 rounded-md text-xs hover:bg-gray-50"
                     >
-                      Cancelar
+                      {t('common.cancel')}
                     </button>
                   </div>
                 </div>
@@ -328,7 +328,7 @@ export default function PlantasPage() {
                 value={form.zonaId}
                 onChange={e => setForm({ ...form, zonaId: e.target.value })}
               >
-                <option value="">— Seleccionar —</option>
+                <option value="">{t('common.seleccionar')}</option>
                 {zonas.map(z => (
                   <option key={z.id} value={z.id}>{z.nombre}</option>
                 ))}
@@ -363,7 +363,7 @@ export default function PlantasPage() {
                 className="w-full border rounded-lg px-3 py-2 mt-1 text-sm"
                 value={form.observaciones}
                 onChange={e => setForm({ ...form, observaciones: e.target.value })}
-                placeholder="Observaciones opcionales"
+                placeholder={t('planta.observacionesPlaceholder')}
               />
             </div>
           </div>
@@ -425,7 +425,7 @@ export default function PlantasPage() {
                       {p.estado !== 'COSECHADA' && p.estado !== 'MUERTA' && (
                         esProximo ? (
                           <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-xs font-medium">
-                            🌾 {diasRestantes === 0 ? '¡Hoy!' : `${diasRestantes} ${t('planta.diasRestantes')}`}
+                            🌾 {diasRestantes === 0 ? t('common.hoy') : `${diasRestantes} ${t('planta.diasRestantes')}`}
                           </span>
                         ) : vencida ? (
                           <span className="inline-flex items-center gap-1 bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-medium">
@@ -455,7 +455,7 @@ export default function PlantasPage() {
                     {isAdmin && (
                       <button
                         onClick={() => {
-                          if (confirm(`¿Eliminar planta ${p.codigo}?`)) remove.mutate(p.id!)
+                          if (confirm(t('planta.confirmarEliminar', { codigo: p.codigo }))) remove.mutate(p.id!)
                         }}
                         className="text-red-500 hover:text-red-700"
                         title={t('common.delete')}

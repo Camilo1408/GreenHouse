@@ -58,6 +58,11 @@ const resources = {
         report:      'Reportar',
         send:        'Enviar',
         clear:       'Limpiar',
+        seleccionar: '— Seleccionar —',
+        required:    'Campo requerido',
+        dias:        'días',
+        hoy:         '¡Hoy!',
+        idioma:      'English',
       },
       zona: {
         title:            'Zonas del Invernadero',
@@ -98,6 +103,31 @@ const resources = {
         proximaCosechar:   'Próxima a cosechar',
         diasRestantes:     'días restantes',
         vencida:           'Vencida',
+        registrada:        'Planta registrada',
+        actualizada:       'Planta actualizada',
+        eliminada:         'Planta eliminada',
+        errorGuardar:      'Error al guardar la planta',
+        errorEliminar:     'Error al eliminar la planta',
+        confirmarEliminar: '¿Eliminar planta {{codigo}}?',
+        // Tipo inline creation
+        nuevoTipo:         'Nuevo tipo',
+        crearTipo:         'Crear nuevo tipo de planta',
+        tipoNombre:        'Nombre',
+        tipoCiclo:         'Ciclo (días)',
+        tipoDescripcion:   'Descripción',
+        tipoTempMin:       'Temp. mín (°C)',
+        tipoTempMax:       'Temp. máx (°C)',
+        tipoHumedadMin:    'Humedad mín (%)',
+        tipoHumedadMax:    'Humedad máx (%)',
+        crearYSeleccionar: 'Crear y seleccionar',
+        creando:           'Creando...',
+        tipoCreado:        'Tipo "{{nombre}}" creado y seleccionado',
+        errorCrearTipo:    'Error al crear el tipo de planta',
+        observacionesPlaceholder: 'Observaciones opcionales',
+        codigoPlaceholder: 'PL-001',
+        tipoNombrePlaceholder: 'Ej: Tomate Cherry',
+        tipoCicloPlaceholder:  'Ej: 90',
+        tipoDescPlaceholder:   'Opcional',
       },
       alerta: {
         title:       'Alertas',
@@ -150,6 +180,10 @@ const resources = {
       cosecha: {
         title:         'Cosechas',
         nueva:         'Registrar Cosecha',
+        registrada:    'Cosecha registrada correctamente',
+        errorRegistrar: 'Error al registrar la cosecha',
+        registradaDetalle: 'Cosecha registrada ✓',
+        errorDetalle:  'Error al registrar cosecha',
         planta:        'Planta',
         empleado:      'Empleado',
         fecha:         'Fecha de cosecha',
@@ -170,6 +204,10 @@ const resources = {
       sensor: {
         title:           'Sensores y Simulador',
         nuevo:           'Nuevo Sensor',
+        eliminado:       'Sensor eliminado',
+        lecturaRegistrada: 'Lectura registrada ✓ (alertas verificadas)',
+        errorLectura:    'Error al registrar lectura',
+        confirmarEliminar: '¿Eliminar sensor?',
         codigo:          'Código',
         tipo:            'Tipo de sensor',
         zona:            'Zona',
@@ -196,6 +234,8 @@ const resources = {
       tratamiento: {
         title:          'Tratamientos / Notas',
         nuevo:          'Agregar Nota / Tratamiento',
+        registrado:     'Tratamiento registrado ✓',
+        errorRegistrar: 'Error al registrar tratamiento',
         tipo:           'Tipo',
         producto:       'Producto utilizado',
         dosis:          'Dosis',
@@ -210,6 +250,9 @@ const resources = {
       empleado: {
         title:        'Empleados',
         nuevo:        'Nuevo Empleado',
+        eliminado:    'Empleado eliminado',
+        errorEliminar: 'Error al eliminar el empleado',
+        confirmarEliminar: '¿Eliminar empleado {{nombre}}?',
         nombre:       'Nombre completo',
         email:        'Correo electrónico',
         password:     'Contraseña',
@@ -324,6 +367,11 @@ const resources = {
         report:   'Report',
         send:     'Send',
         clear:    'Clear',
+        seleccionar: '— Select —',
+        required:    'Required field',
+        dias:        'days',
+        hoy:         'Today!',
+        idioma:      'Español',
       },
       zona: {
         title:            'Greenhouse Zones',
@@ -364,6 +412,31 @@ const resources = {
         proximaCosechar:   'Near harvest',
         diasRestantes:     'days remaining',
         vencida:           'Overdue',
+        registrada:        'Plant registered',
+        actualizada:       'Plant updated',
+        eliminada:         'Plant deleted',
+        errorGuardar:      'Error saving plant',
+        errorEliminar:     'Error deleting plant',
+        confirmarEliminar: 'Delete plant {{codigo}}?',
+        // Tipo inline creation
+        nuevoTipo:         'New type',
+        crearTipo:         'Create new plant type',
+        tipoNombre:        'Name',
+        tipoCiclo:         'Cycle (days)',
+        tipoDescripcion:   'Description',
+        tipoTempMin:       'Min temp (°C)',
+        tipoTempMax:       'Max temp (°C)',
+        tipoHumedadMin:    'Min humidity (%)',
+        tipoHumedadMax:    'Max humidity (%)',
+        crearYSeleccionar: 'Create & select',
+        creando:           'Creating...',
+        tipoCreado:        'Type "{{nombre}}" created and selected',
+        errorCrearTipo:    'Error creating plant type',
+        observacionesPlaceholder: 'Optional observations',
+        codigoPlaceholder: 'PL-001',
+        tipoNombrePlaceholder: 'E.g.: Cherry Tomato',
+        tipoCicloPlaceholder:  'E.g.: 90',
+        tipoDescPlaceholder:   'Optional',
       },
       alerta: {
         title:       'Alerts',
@@ -416,6 +489,10 @@ const resources = {
       cosecha: {
         title:         'Harvests',
         nueva:         'Register Harvest',
+        registrada:    'Harvest registered successfully',
+        errorRegistrar: 'Error registering harvest',
+        registradaDetalle: 'Harvest registered ✓',
+        errorDetalle:  'Error registering harvest',
         planta:        'Plant',
         empleado:      'Employee',
         fecha:         'Harvest date',
@@ -436,6 +513,10 @@ const resources = {
       sensor: {
         title:           'Sensors & Simulator',
         nuevo:           'New Sensor',
+        eliminado:       'Sensor deleted',
+        lecturaRegistrada: 'Reading registered ✓ (alerts checked)',
+        errorLectura:    'Error registering reading',
+        confirmarEliminar: 'Delete sensor?',
         codigo:          'Code',
         tipo:            'Sensor type',
         zona:            'Zone',
@@ -462,6 +543,8 @@ const resources = {
       tratamiento: {
         title:          'Treatments / Notes',
         nuevo:          'Add Note / Treatment',
+        registrado:     'Treatment registered ✓',
+        errorRegistrar: 'Error registering treatment',
         tipo:           'Type',
         producto:       'Product used',
         dosis:          'Dosage',
@@ -476,6 +559,9 @@ const resources = {
       empleado: {
         title:        'Employees',
         nuevo:        'New Employee',
+        eliminado:    'Employee deleted',
+        errorEliminar: 'Error deleting employee',
+        confirmarEliminar: 'Delete employee {{nombre}}?',
         nombre:       'Full name',
         email:        'Email address',
         password:     'Password',
@@ -538,6 +624,12 @@ const resources = {
       },
     },
   },
+}
+
+// Siempre arrancar en español — ignorar preferencia almacenada previamente
+// (el toggle de idioma sólo persiste durante la sesión actual)
+if (typeof localStorage !== 'undefined') {
+  localStorage.removeItem('i18nextLng')
 }
 
 i18n.use(initReactI18next).init({

@@ -73,9 +73,9 @@ export default function EmpleadosPage() {
     mutationFn: (id: number) => empleadoService.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['empleados'] })
-      toast.success('Empleado eliminado')
+      toast.success(t('empleado.eliminado'))
     },
-    onError: () => toast.error('Error al eliminar el empleado'),
+    onError: () => toast.error(t('empleado.errorEliminar')),
   })
 
   const startEdit = (e: Empleado) => {
@@ -246,7 +246,7 @@ export default function EmpleadosPage() {
                   </button>
                   <button
                     onClick={() => {
-                      if (confirm(`¿Eliminar empleado ${e.nombreCompleto}?`)) remove.mutate(e.id!)
+                      if (confirm(t('empleado.confirmarEliminar', { nombre: e.nombreCompleto }))) remove.mutate(e.id!)
                     }}
                     className="text-red-500 hover:text-red-700"
                     title={t('common.delete')}

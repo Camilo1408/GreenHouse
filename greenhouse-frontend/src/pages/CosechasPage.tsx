@@ -86,12 +86,12 @@ export default function CosechasPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['cosechas'] })
       qc.invalidateQueries({ queryKey: ['plantas'] })
-      toast.success('Cosecha registrada correctamente')
+      toast.success(t('cosecha.registrada'))
       setShowForm(false)
       setForm(emptyForm)
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message ?? 'Error al registrar la cosecha')
+      toast.error(err?.response?.data?.message ?? t('cosecha.errorRegistrar'))
     },
   })
 
