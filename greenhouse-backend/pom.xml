@@ -126,7 +126,11 @@
         </configuration>
       </plugin>
 
-      <!-- Genera JavaDoc HTML en target/site/apidocs -->
+      <!--
+        Plugin JavaDoc — solo para generación manual: mvn javadoc:javadoc
+        NO está ligado a ninguna fase del ciclo de vida para no generar
+        un -javadoc.jar adicional que rompa el "java -jar *.jar" del CI.
+      -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
@@ -136,20 +140,11 @@
           <encoding>UTF-8</encoding>
           <charset>UTF-8</charset>
           <docencoding>UTF-8</docencoding>
-          <!-- Ignora errores de Doclint para no romper el build -->
+          <!-- Ignora errores de Doclint para no interrumpir la generación -->
           <doclint>none</doclint>
           <!-- Excluye clases de configuración generadas por Lombok -->
           <excludePackageNames>*.config</excludePackageNames>
         </configuration>
-        <executions>
-          <execution>
-            <id>attach-javadocs</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <phase>package</phase>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>
