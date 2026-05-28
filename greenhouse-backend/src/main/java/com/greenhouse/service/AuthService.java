@@ -39,6 +39,10 @@ public class AuthService {
     /**
      * Registra un nuevo usuario local.
      * Genera un token de verificación y envía el correo de confirmación.
+     *
+     * @param request datos del nuevo usuario (nombre, email, contraseña)
+     * @return {@code AuthResponse} con {@code exito=true} y mensaje de confirmación,
+     *         o {@code exito=false} si el email ya está registrado
      */
     public AuthResponse registrar(RegisterRequest request) {
         if (empleadoRepository.existsByEmail(request.getEmail())) {
@@ -81,6 +85,11 @@ public class AuthService {
 
     /**
      * Verifica el token de correo y activa la cuenta del usuario.
+     *
+     * @param token UUID del token de verificación enviado al correo del usuario
+     * @return {@code AuthResponse} con {@code exito=true} y URL de redirección si es válido,
+     *         o {@code exito=false} si el token es inválido, ya fue usado o expiró
+     * @throws com.greenhouse.exception.ResourceNotFoundException si el token no existe
      */
     public AuthResponse verificarEmail(String token) {
         VerificationToken vToken = tokenRepository.findByToken(token)
@@ -109,6 +118,12 @@ public class AuthService {
 
     /**
      * Reenvía el correo de verificación si el usuario aún no ha verificado su cuenta.
+     * Invalida cualquier token previo antes de generar uno nuevo.
+     *
+     * @param email dirección de correo del usuario
+     * @return {@code AuthResponse} con {@code exito=true} si se reenvió correctamente,
+     *         o {@code exito=false} si el correo ya estaba verificado
+     * @throws com.greenhouse.exception.ResourceNotFoundException si no existe cuenta con ese correo
      */
     public AuthResponse reenviarVerificacion(String email) {
         Empleado empleado = empleadoRepository.findByEmail(email)

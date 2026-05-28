@@ -30,15 +30,35 @@ public class ZonaService {
     private final CosechaRepository  cosechaRepository;
     private final TurnoRepository    turnoRepository;
 
+    /**
+     * Retorna todas las zonas del invernadero.
+     *
+     * @return lista completa de zonas (puede estar vacía)
+     */
     public List<Zona> findAll() {
         return zonaRepository.findAll();
     }
 
+    /**
+     * Busca una zona por su identificador.
+     *
+     * @param id ID de la zona
+     * @return la zona encontrada
+     * @throws com.greenhouse.exception.ResourceNotFoundException si no existe una zona con ese ID
+     */
     public Zona findById(Long id) {
         return zonaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Zona no encontrada con id: " + id));
     }
 
+    /**
+     * Crea una nueva zona en el invernadero.
+     * El nombre de la zona debe ser único.
+     *
+     * @param zona datos de la nueva zona
+     * @return la zona persistida con su ID asignado
+     * @throws IllegalArgumentException si ya existe una zona con el mismo nombre
+     */
     public Zona save(Zona zona) {
         if (zonaRepository.existsByNombre(zona.getNombre())) {
             throw new IllegalArgumentException("Ya existe una zona con el nombre: " + zona.getNombre());
@@ -46,6 +66,14 @@ public class ZonaService {
         return zonaRepository.save(zona);
     }
 
+    /**
+     * Actualiza los datos de una zona existente.
+     *
+     * @param id      ID de la zona a actualizar
+     * @param updated objeto con los nuevos valores (nombre, dimensión, capacidad, estado, ubicación)
+     * @return la zona actualizada
+     * @throws com.greenhouse.exception.ResourceNotFoundException si no existe la zona
+     */
     public Zona update(Long id, Zona updated) {
         Zona existing = findById(id);
         existing.setNombre(updated.getNombre());
@@ -94,6 +122,12 @@ public class ZonaService {
         zonaRepository.deleteById(id);
     }
 
+    /**
+     * Retorna las zonas que se encuentran en un estado determinado.
+     *
+     * @param estado estado de la zona (ACTIVA, EN_MANTENIMIENTO, INACTIVA)
+     * @return lista de zonas con ese estado; vacía si no hay ninguna
+     */
     public List<Zona> findByEstado(Zona.EstadoZona estado) {
         return zonaRepository.findByEstado(estado);
     }

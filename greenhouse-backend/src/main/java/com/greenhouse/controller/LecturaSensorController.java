@@ -8,6 +8,9 @@ package com.greenhouse.controller;
 import com.greenhouse.entity.LecturaSensor;
 import com.greenhouse.service.LecturaSensorService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,18 +31,27 @@ public class LecturaSensorController {
 
     @GetMapping("/sensor/{sensorId}")
     @Operation(summary = "Obtener lecturas de un sensor")
-    public ResponseEntity<List<LecturaSensor>> findBySensor(@PathVariable Long sensorId) {
+    @ApiResponse(responseCode = "200", description = "Lista de lecturas del sensor")
+    public ResponseEntity<List<LecturaSensor>> findBySensor(
+            @Parameter(description = "ID del sensor", required = true) @PathVariable Long sensorId) {
         return ResponseEntity.ok(lecturaService.findBySensor(sensorId));
     }
 
     @GetMapping("/zona/{zonaId}")
     @Operation(summary = "Obtener todas las lecturas de los sensores de una zona")
-    public ResponseEntity<List<LecturaSensor>> findByZona(@PathVariable Long zonaId) {
+    @ApiResponse(responseCode = "200", description = "Lista de lecturas de todos los sensores de la zona, ordenadas por fecha desc")
+    public ResponseEntity<List<LecturaSensor>> findByZona(
+            @Parameter(description = "ID de la zona", required = true) @PathVariable Long zonaId) {
         return ResponseEntity.ok(lecturaService.findByZona(zonaId));
     }
 
     @PostMapping
     @Operation(summary = "Registrar nueva lectura (genera alerta si está fuera de umbral)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Lectura registrada. Se genera alerta automáticamente si el valor supera los umbrales"),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+        @ApiResponse(responseCode = "404", description = "Sensor no encontrado")
+    })
     public ResponseEntity<LecturaSensor> registrar(@Valid @RequestBody LecturaSensor lectura) {
         return ResponseEntity.status(HttpStatus.CREATED).body(lecturaService.registrar(lectura));
     }

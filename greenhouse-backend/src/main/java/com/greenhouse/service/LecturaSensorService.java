@@ -27,11 +27,22 @@ public class LecturaSensorService {
     private final SensorRepository sensorRepository;
     private final AlertaRepository alertaRepository;
 
+    /**
+     * Retorna todas las lecturas de un sensor específico.
+     *
+     * @param sensorId ID del sensor
+     * @return lista de lecturas del sensor; vacía si no tiene ninguna
+     */
     public List<LecturaSensor> findBySensor(Long sensorId) {
         return lecturaRepository.findBySensorId(sensorId);
     }
 
-    /** Retorna las últimas N lecturas de cada sensor en la zona, ordenadas desc. */
+    /**
+     * Retorna todas las lecturas de los sensores ubicados en una zona, ordenadas por fecha descendente.
+     *
+     * @param zonaId ID de la zona
+     * @return lista de lecturas de todos los sensores de la zona; vacía si la zona no tiene sensores
+     */
     public List<LecturaSensor> findByZona(Long zonaId) {
         List<Long> sensorIds = sensorRepository.findByZonaId(zonaId)
                 .stream().map(s -> s.getId()).toList();
@@ -39,12 +50,26 @@ public class LecturaSensorService {
         return lecturaRepository.findBySensorIdInOrderByFechaHoraDesc(sensorIds);
     }
 
-    /** Última lectura de un sensor específico. */
+    /**
+     * Retorna la lectura más reciente de un sensor específico.
+     *
+     * @param sensorId ID del sensor
+     * @return {@code Optional} con la última lectura, o vacío si el sensor no tiene lecturas
+     */
     public java.util.Optional<LecturaSensor> findLastBySensor(Long sensorId) {
         List<LecturaSensor> all = lecturaRepository.findBySensorIdOrderByFechaHoraDesc(sensorId);
         return all.isEmpty() ? java.util.Optional.empty() : java.util.Optional.of(all.get(0));
     }
 
+    /**
+     * Registra una nueva lectura de sensor.
+     * Si la fecha/hora no está indicada, se usa el instante actual.
+     * Evalúa los umbrales configurados en el sensor y genera una alerta si el valor está fuera de rango.
+     *
+     * @param lectura datos de la lectura (debe incluir la referencia al sensor y el valor)
+     * @return la lectura persistida con su ID asignado
+     * @throws com.greenhouse.exception.ResourceNotFoundException si el sensor no existe
+     */
     public LecturaSensor registrar(LecturaSensor lectura) {
         Sensor sensor = sensorRepository.findById(lectura.getSensor().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Sensor no encontrado con id: " + lectura.getSensor().getId()));

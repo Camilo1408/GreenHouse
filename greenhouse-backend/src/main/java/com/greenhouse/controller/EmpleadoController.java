@@ -9,6 +9,9 @@ import com.greenhouse.entity.Empleado;
 import com.greenhouse.exception.ResourceNotFoundException;
 import com.greenhouse.service.EmpleadoService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +40,10 @@ public class EmpleadoController {
      */
     @GetMapping("/me")
     @Operation(summary = "Obtener el perfil del empleado autenticado")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Perfil del empleado o indicador sin_perfil"),
+        @ApiResponse(responseCode = "401", description = "No autenticado")
+    })
     public ResponseEntity<?> getMe(Authentication auth) {
         if (auth == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         try {
@@ -49,6 +56,10 @@ public class EmpleadoController {
     @GetMapping
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Listar todos los empleados")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Lista de empleados retornada correctamente"),
+        @ApiResponse(responseCode = "403", description = "Acceso denegado (requiere ADMINISTRADOR)")
+    })
     public ResponseEntity<List<Empleado>> findAll() {
         return ResponseEntity.ok(empleadoService.findAll());
     }
@@ -56,13 +67,24 @@ public class EmpleadoController {
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Obtener empleado por ID")
-    public ResponseEntity<Empleado> findById(@PathVariable Long id) {
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Empleado encontrado"),
+        @ApiResponse(responseCode = "403", description = "Acceso denegado (requiere ADMINISTRADOR)"),
+        @ApiResponse(responseCode = "404", description = "Empleado no encontrado")
+    })
+    public ResponseEntity<Empleado> findById(
+            @Parameter(description = "ID del empleado", required = true) @PathVariable Long id) {
         return ResponseEntity.ok(empleadoService.findById(id));
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Registrar nuevo empleado")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Empleado registrado exitosamente"),
+        @ApiResponse(responseCode = "400", description = "Email duplicado o datos inválidos"),
+        @ApiResponse(responseCode = "403", description = "Acceso denegado (requiere ADMINISTRADOR)")
+    })
     public ResponseEntity<Empleado> create(@Valid @RequestBody Empleado empleado) {
         return ResponseEntity.status(HttpStatus.CREATED).body(empleadoService.save(empleado));
     }
@@ -70,14 +92,27 @@ public class EmpleadoController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Actualizar empleado")
-    public ResponseEntity<Empleado> update(@PathVariable Long id, @Valid @RequestBody Empleado empleado) {
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Empleado actualizado correctamente"),
+        @ApiResponse(responseCode = "403", description = "Acceso denegado (requiere ADMINISTRADOR)"),
+        @ApiResponse(responseCode = "404", description = "Empleado no encontrado")
+    })
+    public ResponseEntity<Empleado> update(
+            @Parameter(description = "ID del empleado", required = true) @PathVariable Long id,
+            @Valid @RequestBody Empleado empleado) {
         return ResponseEntity.ok(empleadoService.update(id, empleado));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Eliminar empleado")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Empleado eliminado correctamente"),
+        @ApiResponse(responseCode = "403", description = "Acceso denegado (requiere ADMINISTRADOR)"),
+        @ApiResponse(responseCode = "404", description = "Empleado no encontrado")
+    })
+    public ResponseEntity<Void> delete(
+            @Parameter(description = "ID del empleado", required = true) @PathVariable Long id) {
         empleadoService.delete(id);
         return ResponseEntity.noContent().build();
     }
