@@ -119,6 +119,10 @@ jobs:
       - name: Build producción
         working-directory: greenhouse-frontend
         run: npm run build
+        env:
+          # Apunta al backend local para que Selenium pueda autenticarse en CI.
+          # Railway usa su propia variable VITE_API_URL al hacer el build en producción.
+          VITE_API_URL: http://localhost:8080/api
 
       - name: Guardar build como artefacto
         uses: actions/upload-artifact@v4
@@ -269,7 +273,8 @@ jobs:
             --spring.mail.password=test \
             --spring.mail.properties.mail.smtp.auth=false \
             --spring.mail.properties.mail.smtp.starttls.enable=false \
-            --server.servlet.session.cookie.secure=false &
+            --server.servlet.session.cookie.secure=false \
+            --server.servlet.session.cookie.same-site=lax &
           for i in $(seq 1 36); do
             sleep 5
             if curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1; then
