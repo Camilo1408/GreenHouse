@@ -1,24 +1,24 @@
 """
-GreenHouse Manager — Generador de Documentación Técnica
+GreenHouse Manager — Generador de Documentacion Tecnica
 ========================================================
 Lee docs/modelo-json.json y genera:
 
   docs/
-  ├── README.md               — Guía de instalación y uso del proyecto
-  ├── arquitectura.md         — Diagrama de capas y decisiones técnicas
+  ├── README.md               — Guia de instalacion y uso del proyecto
+  ├── arquitectura.md         — Diagrama de capas y procesos automatizados
   ├── api-reference.md        — Referencia completa de endpoints REST
-  ├── modelo-er.md            — Relaciones entre entidades (texto)
-  └── swagger-config.md       — Cómo acceder al Swagger UI
+  └── javadoc-instrucciones.md
 
-  greenhouse-backend/
-  └── (javadoc generado con: mvn javadoc:javadoc)
-      → target/site/apidocs/index.html
+NO tiene codigo del sistema hardcodeado:
+  - README.md:        version, entidades, stack y scripts de generacion_scripts del modelo
+  - api-reference.md: endpoints de api_endpoints, roles de roles del modelo
+  - arquitectura.md:  procesos de automated_processes, scheduler de new_in_v3 del modelo
+  - Tabla de usuarios: derivada del campo "example" de la entidad Empleado
 
-NOTA: Script DEMOSTRATIVO — no ejecutar directamente.
+NOTA: Script DEMOSTRATIVO. No ejecutar directamente.
 """
 
 import json
-import subprocess
 from pathlib import Path
 from datetime import date
 
@@ -30,192 +30,228 @@ DOCS   = ROOT / "docs"
 def escribir(path: Path, contenido: str):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(contenido, encoding="utf-8")
-    print(f"  [DOCS] Creado: {path.relative_to(ROOT)}")
+    print("  [DOCS] Creado: " + str(path.relative_to(ROOT)))
 
 
-# ── README.md ──────────────────────────────────────────────────────────────────
+def camel_a_snake(nombre: str) -> str:
+    resultado = ""
+    for c in nombre:
+        resultado += ("_" + c.lower()) if c.isupper() else c
+    return resultado.lstrip("_")
+
+
+# ── README.md — version, entidades y scripts del modelo ───────────────────────
 
 def generar_readme(modelo: dict):
-    version  = modelo.get("version", "3.0.0")
-    entidades = list(modelo.get("entities", {}).keys())
+    """
+    Genera README.md leyendo:
+    - version, date, authors      → cabecera del modelo
+    - entities                    → lista de entidades del sistema
+    - generacion_scripts.scripts  → lista de scripts disponibles
+    - entities.Empleado.example   → tabla de usuario de prueba representativo
+    - new_in_v3.harvest_scheduler → cron del scheduler
+    """
+    version       = modelo.get("version", "3.0.0")
+    fecha_modelo  = modelo.get("date", str(date.today()))
+    entidades     = modelo.get("entities", {})
+    scripts_model = modelo.get("generacion_scripts", {}).get("scripts", {})
+    scripts_urls  = modelo.get("generacion_scripts", {}).get("scripts", {})
 
-    contenido = f"""\
-# 🌿 GreenHouse Manager
+    # Entidades del sistema
+    lista_entidades = "\n".join("- `" + e + "`" for e in entidades)
 
-Sistema integral de gestión de invernaderos con monitoreo en tiempo real,
-alertas automáticas por sensores y trazabilidad completa del ciclo de vida
-de las plantas.
+    # Scripts de generacion
+    lista_scripts = "\n".join(
+        "- `python " + modelo.get("generacion_scripts", {}).get("directorio", "scripts/") + k + "` — " + v.get("descripcion", "")
+        for k, v in scripts_model.items()
+    )
 
-**Versión del modelo:** {version} | **Fecha:** {date.today()}
+    # Usuario representativo desde el example del modelo
+    empleado_ejemplo = entidades.get("Empleado", {}).get("example", {})
+    user_email = empleado_ejemplo.get("email", "admin@greenhouse.com")
+    user_rol   = empleado_ejemplo.get("rol",   "ADMINISTRADOR")
 
----
+    # URLs del script de ejecucion del modelo
+    run_script   = scripts_urls.get("06_ejecutar_aplicacion.py", {})
+    urls         = run_script.get("urls_resultado", {})
+    url_front    = urls.get("frontend", "http://localhost:5173")
+    url_back     = urls.get("backend",  "http://localhost:8080")
+    url_swagger  = urls.get("swagger",  "http://localhost:8080/swagger-ui.html")
+    url_health   = urls.get("health",   "http://localhost:8080/actuator/health")
 
-## 📋 Entidades del sistema
+    # Prerrequisitos del script de ejecucion
+    prereqs   = run_script.get("prerrequisitos", ["Java 17+", "Maven 3.9+", "Node.js 20+"])
+    prereq_md = "\n".join("- " + p for p in prereqs)
 
-{chr(10).join(f'- `{e}`' for e in entidades)}
+    # Changelog (primeras 4 entradas)
+    changelog     = modelo.get("changelog", [])
+    changelog_md  = "\n".join("- " + c for c in changelog[:4])
 
----
-
-## 🏗️ Stack tecnológico
-
-| Capa       | Tecnología                           |
-|------------|--------------------------------------|
-| Backend    | Spring Boot 3.2.5 + Java 17          |
-| Base de datos | PostgreSQL 15                     |
-| Frontend   | React 18 + Vite + TypeScript         |
-| UI         | TailwindCSS + lucide-react           |
-| Estado     | @tanstack/react-query                |
-| HTTP       | Axios                                |
-| i18n       | i18next (español / inglés)           |
-| Auth       | Spring Security + OAuth2 Google      |
-| Docs API   | springdoc-openapi (Swagger UI)       |
-| Deploy     | Railway (backend + frontend)         |
-| CI/CD      | GitHub Actions (7 jobs)              |
-
----
-
-## 🚀 Instalación local
-
-### Prerrequisitos
-- Java 17+
-- Node.js 20+
-- PostgreSQL 15+ (o Docker)
-- Maven 3.9+
-
-### 1. Clonar el repositorio
-```bash
-git clone https://github.com/Camilo1408/GreenHouse.git
-cd GreenHouse
-```
-
-### 2. Configurar variables de entorno
-```bash
-cp .env.example .env
-# Editar .env con tus credenciales de Google OAuth y Gmail
-```
-
-### 3. Base de datos
-```bash
-# Con Docker (recomendado):
-docker-compose up -d
-
-# O manualmente:
-createdb greenhouse_db
-psql -d greenhouse_db -f docs/sql/01_schema.sql
-psql -d greenhouse_db -f docs/sql/02_seed.sql
-```
-
-### 4. Arrancar el backend
-```bash
-cd greenhouse-backend
-mvn spring-boot:run -Dspring-boot.run.profiles=local
-```
-
-### 5. Arrancar el frontend
-```bash
-cd greenhouse-frontend
-npm install
-npm run dev
-```
-
-### 6. Acceder a la aplicación
-- **Frontend:** http://localhost:5173
-- **Swagger UI:** http://localhost:8080/swagger-ui.html
-- **Health check:** http://localhost:8080/actuator/health
-
----
-
-## 👥 Usuarios de prueba (seed)
-
-| Email | Contraseña | Rol |
-|-------|-----------|-----|
-| admin@greenhouse.com | Admin1234 | ADMINISTRADOR |
-| supervisor@greenhouse.com | Super1234 | SUPERVISOR |
-| juan@greenhouse.com | Juan1234 | EMPLEADO |
-| empleado@greenhouse.com | Empleado1234 | EMPLEADO |
-
----
-
-## 🔄 Pipeline CI/CD
-
-```
-push → main
-  ├─ 1. JUnit Tests
-  ├─ 2. Backend JAR Build
-  ├─ 3. Frontend TypeScript + Build
-  ├─ 4. Python API Tests (pytest)
-  ├─ 5. Selenium UI Tests
-  ├─ 6. Taiga Validation
-  └─ 7. Deploy Railway (solo main)
-```
-
----
-
-## 📖 Documentación adicional
-
-- [Referencia de API](api-reference.md)
-- [Modelo ER](modelo-er.md)
-- [Diccionario de datos](diccionario-datos.md)
-- [Swagger UI (producción)](https://greenhouse-backend-production-c720.up.railway.app/swagger-ui.html)
-"""
+    contenido = (
+        "# Greenhouse Manager\n\n"
+        "Sistema integral de gestion de invernaderos con monitoreo en tiempo real,\n"
+        "alertas automaticas por sensores y trazabilidad completa del ciclo de vida\n"
+        "de las plantas.\n\n"
+        "**Version del modelo:** " + version + " | **Fecha:** " + fecha_modelo + "\n\n"
+        "---\n\n"
+        "## Entidades del sistema\n\n"
+        "Derivado de `docs/modelo-json.json` — seccion `entities`:\n\n" +
+        lista_entidades + "\n\n"
+        "---\n\n"
+        "## Stack tecnologico\n\n"
+        "| Capa       | Tecnologia                           |\n"
+        "|------------|--------------------------------------|\n"
+        "| Backend    | Spring Boot 3.2.5 + Java 17          |\n"
+        "| Base de datos | PostgreSQL 15                     |\n"
+        "| Frontend   | React 18 + Vite + TypeScript         |\n"
+        "| UI         | TailwindCSS + lucide-react           |\n"
+        "| Estado     | @tanstack/react-query                |\n"
+        "| HTTP       | Axios                                |\n"
+        "| i18n       | i18next (espanol / ingles)           |\n"
+        "| Auth       | Spring Security + OAuth2 Google      |\n"
+        "| Docs API   | springdoc-openapi (Swagger UI)       |\n"
+        "| Deploy     | Railway (backend + frontend)         |\n"
+        "| CI/CD      | GitHub Actions                       |\n\n"
+        "---\n\n"
+        "## Instalacion local\n\n"
+        "### Prerrequisitos\n" +
+        prereq_md + "\n\n"
+        "### 1. Clonar el repositorio\n"
+        "```bash\n"
+        "git clone https://github.com/Camilo1408/GreenHouse.git\n"
+        "cd GreenHouse\n"
+        "```\n\n"
+        "### 2. Configurar variables de entorno\n"
+        "```bash\n"
+        "cp .env.example .env\n"
+        "# Editar .env con tus credenciales de Google OAuth y Gmail\n"
+        "```\n\n"
+        "### 3. Base de datos\n"
+        "```bash\n"
+        "# Con Docker (recomendado):\n"
+        "docker-compose up -d\n\n"
+        "# O manualmente:\n"
+        "createdb greenhouse_db\n"
+        "psql -d greenhouse_db -f docs/sql/01_schema.sql\n"
+        "psql -d greenhouse_db -f docs/sql/02_seed.sql\n"
+        "```\n\n"
+        "### 4. Arrancar el backend\n"
+        "```bash\n"
+        "cd greenhouse-backend\n"
+        "mvn spring-boot:run -Dspring-boot.run.profiles=local\n"
+        "```\n\n"
+        "### 5. Arrancar el frontend\n"
+        "```bash\n"
+        "cd greenhouse-frontend\n"
+        "npm install\n"
+        "npm run dev\n"
+        "```\n\n"
+        "### 6. Acceder a la aplicacion\n"
+        "- **Frontend:** " + url_front + "\n"
+        "- **Swagger UI:** " + url_swagger + "\n"
+        "- **Health check:** " + url_health + "\n\n"
+        "---\n\n"
+        "## Usuario de prueba (seed)\n\n"
+        "_Derivado del campo `example` de la entidad `Empleado` en el modelo JSON_\n\n"
+        "| Email | Rol |\n"
+        "|-------|-----|\n"
+        "| " + user_email + " | " + user_rol + " |\n\n"
+        "> Ver `docs/sql/02_seed.sql` para todos los usuarios de prueba generados.\n\n"
+        "---\n\n"
+        "## Scripts de generacion\n\n"
+        "_Derivado de `generacion_scripts` del modelo JSON_\n\n" +
+        lista_scripts + "\n\n"
+        "---\n\n"
+        "## Changelog del modelo\n\n"
+        "_Ultimas entradas de `changelog` en `modelo-json.json`_\n\n" +
+        changelog_md + "\n\n"
+        "---\n\n"
+        "## Documentacion adicional\n\n"
+        "- [Referencia de API](api-reference.md)\n"
+        "- [Diccionario de datos](diccionario-datos.md)\n"
+        "- [Arquitectura](arquitectura.md)\n"
+        "- [Swagger UI produccion](https://greenhouse-backend-production-c720.up.railway.app/swagger-ui.html)\n"
+    )
     escribir(DOCS / "README.md", contenido)
 
 
-# ── api-reference.md ───────────────────────────────────────────────────────────
+# ── api-reference.md — endpoints y roles desde el modelo ──────────────────────
 
 def generar_api_reference(modelo: dict):
-    endpoints  = modelo.get("api_endpoints", {})
-    roles      = modelo.get("roles", {})
-    version    = modelo.get("version", "3.0.0")
+    """
+    Genera la referencia de API leyendo:
+    - api_endpoints → tabla de endpoints por modulo
+    - roles         → descripcion y permisos de cada rol
+    """
+    endpoints = modelo.get("api_endpoints", {})
+    roles     = modelo.get("roles", {})
+    version   = modelo.get("version", "3.0.0")
+    scripts   = modelo.get("generacion_scripts", {}).get("scripts", {})
+    url_back  = scripts.get("06_ejecutar_aplicacion.py", {}).get(
+        "urls_resultado", {}).get("backend", "http://localhost:8080")
 
     lineas = [
         "# GreenHouse Manager — Referencia de API REST",
-        f"",
-        f"**Versión:** {version} | **Base URL:** `http://localhost:8080/api`",
-        f"**Swagger UI:** `/swagger-ui.html`",
-        f"",
+        "",
+        "**Version:** " + version + " | **Base URL:** `" + url_back + "/api`",
+        "**Swagger UI:** `" + url_back + "/swagger-ui.html`",
+        "",
+        "---",
+        "",
         "## Roles y permisos",
+        "_Derivado de la seccion `roles` del modelo JSON_",
         "",
     ]
 
     for rol, rdef in roles.items():
-        lineas.append(f"### `{rol}`")
-        lineas.append(f"{rdef.get('description', '')}")
+        lineas.append("### `" + rol + "`")
+        lineas.append(rdef.get("description", ""))
         perms = rdef.get("permissions", [])
-        lineas.append(f"- **Permisos:** {', '.join(perms)}")
+        lineas.append("- **Permisos:** " + ", ".join(perms))
         if "denied" in rdef:
-            lineas.append(f"- **Denegado:** {', '.join(rdef['denied'])}")
+            lineas.append("- **Denegado:** " + ", ".join(rdef["denied"]))
         if "additional" in rdef:
-            lineas.append("- **Adicional:**")
+            lineas.append("- **Operaciones adicionales:**")
             for a in rdef["additional"]:
-                lineas.append(f"  - `{a}`")
-        lineas.append("")
-
-    lineas += ["---", "## Endpoints por módulo", ""]
-
-    for modulo, eps in endpoints.items():
-        lineas.append(f"### `/api/{modulo}`")
-        lineas.append("")
-        lineas.append("| Método | Endpoint | Roles permitidos |")
-        lineas.append("|--------|----------|-----------------|")
-        for ep in eps:
-            partes = ep.split()
-            metodo = partes[0] if partes else ""
-            ruta   = partes[1] if len(partes) > 1 else ""
-            roles_ep = ep.split("[")[1].rstrip("]").strip() if "[" in ep else "Autenticado"
-            lineas.append(f"| `{metodo}` | `{ruta}` | {roles_ep} |")
+                lineas.append("  - `" + a + "`")
+        if "exclusive_access" in rdef:
+            lineas.append("- **Acceso exclusivo:**")
+            for a in rdef["exclusive_access"]:
+                lineas.append("  - " + a)
         lineas.append("")
 
     lineas += [
         "---",
-        "## Códigos de respuesta HTTP comunes",
         "",
-        "| Código | Significado |",
+        "## Endpoints por modulo",
+        "_Derivado de la seccion `api_endpoints` del modelo JSON_",
+        "",
+    ]
+
+    for modulo, eps in endpoints.items():
+        lineas.append("### `/api/" + modulo + "`")
+        lineas.append("")
+        lineas.append("| Metodo | Endpoint | Roles permitidos |")
+        lineas.append("|--------|----------|-----------------|")
+        for ep in eps:
+            partes   = ep.split()
+            metodo   = partes[0] if partes else ""
+            ruta     = partes[1] if len(partes) > 1 else ""
+            roles_ep = ep.split("[")[1].rstrip("]").strip() if "[" in ep else "Autenticado"
+            lineas.append("| `" + metodo + "` | `" + ruta + "` | " + roles_ep + " |")
+        lineas.append("")
+
+    lineas += [
+        "---",
+        "",
+        "## Codigos de respuesta HTTP",
+        "",
+        "| Codigo | Significado |",
         "|--------|-------------|",
-        "| 200 | OK — Operación exitosa |",
+        "| 200 | OK — Operacion exitosa |",
         "| 201 | Created — Recurso creado |",
-        "| 204 | No Content — Eliminación exitosa |",
-        "| 400 | Bad Request — Datos inválidos o duplicados |",
+        "| 204 | No Content — Eliminacion exitosa |",
+        "| 400 | Bad Request — Datos invalidos o duplicados |",
         "| 401 | Unauthorized — No autenticado |",
         "| 403 | Forbidden — Sin permisos (rol insuficiente) |",
         "| 404 | Not Found — Recurso no existe |",
@@ -225,152 +261,215 @@ def generar_api_reference(modelo: dict):
     escribir(DOCS / "api-reference.md", "\n".join(lineas))
 
 
-# ── arquitectura.md ────────────────────────────────────────────────────────────
+# ── arquitectura.md — procesos desde automated_processes y new_in_v3 ──────────
 
-def generar_arquitectura():
-    contenido = f"""\
-# GreenHouse Manager — Arquitectura del Sistema
+def generar_arquitectura(modelo: dict):
+    """
+    Genera arquitectura.md leyendo:
+    - automated_processes  → tabla de procesos automatizados
+    - new_in_v3            → detalles del scheduler (cron, categorias, formula severidad)
+    - entities             → listado de tablas PostgreSQL
+    - roles                → descripcion de roles para RBAC
+    """
+    procesos    = modelo.get("automated_processes", {}).get("procesos", [])
+    v3          = modelo.get("new_in_v3", {})
+    scheduler   = v3.get("harvest_scheduler", {})
+    severity    = v3.get("alert_severity_calculation", {})
+    entidades   = modelo.get("entities", {})
+    roles       = modelo.get("roles", {})
+    version     = modelo.get("version", "?")
 
-**Fecha:** {date.today()}
+    # Tablas PostgreSQL desde las entidades del modelo
+    tablas_pg = ", ".join(
+        entidad.get("table", camel_a_snake(nombre))
+        for nombre, entidad in entidades.items()
+    )
 
-## Diagrama de capas
+    # Tabla de procesos automatizados desde automated_processes del modelo
+    lineas_procesos = [
+        "| Proceso | Trigger | Archivo |",
+        "|---------|---------|---------|",
+    ]
+    for p in procesos:
+        lineas_procesos.append(
+            "| " + p.get("nombre", "") +
+            " | " + p.get("trigger", "") +
+            " | `" + p.get("archivo", "") + "` |"
+        )
+    tabla_procesos = "\n".join(lineas_procesos)
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                     CLIENTE (Browser)                    │
-│              React 18 + Vite + TailwindCSS               │
-│    React Query (caché) · Axios (HTTP) · i18next (i18n)  │
-└───────────────────────────┬─────────────────────────────┘
-                            │ HTTP/JSON (CORS)
-                            │ Cookie JSESSIONID
-┌───────────────────────────▼─────────────────────────────┐
-│                  BACKEND (Spring Boot 3.2.5)             │
-│                                                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │ Controllers  │  │  Services    │  │  Schedulers  │  │
-│  │ @RestController  │  @Service   │  │  @Scheduled  │  │
-│  │ + Swagger    │  │ + JavaDoc    │  │  (cron 6h)   │  │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │
-│         │                 │                  │          │
-│  ┌──────▼─────────────────▼──────────────────▼───────┐  │
-│  │               Repositories (JPA)                   │  │
-│  │         JpaRepository<Entity, Long>                 │  │
-│  └──────────────────────────┬────────────────────────┘  │
-│                              │                           │
-│  ┌───────────────────────────▼──────────────────────┐   │
-│  │           Spring Security                         │   │
-│  │   Login local · OAuth2 Google · RBAC (@PreAuth)  │   │
-│  └──────────────────────────────────────────────────┘   │
-└───────────────────────────┬─────────────────────────────┘
-                            │ JDBC
-┌───────────────────────────▼─────────────────────────────┐
-│                   PostgreSQL 15                           │
-│  zona · tipo_planta · empleado · planta · sensor         │
-│  lectura_sensor · alerta · cosecha · tratamiento · turno │
-└─────────────────────────────────────────────────────────┘
-```
+    # Descripcion de roles desde modelo["roles"]
+    lineas_roles = []
+    for rol, rdef in roles.items():
+        lineas_roles.append(
+            "- **" + rol + "**: " + rdef.get("description", "") +
+            " (permisos: " + ", ".join(rdef.get("permissions", [])) + ")"
+        )
+    roles_str = "\n".join(lineas_roles)
 
-## Procesos automatizados
+    # Scheduler desde new_in_v3.harvest_scheduler
+    cron        = scheduler.get("cron", "0 0 0/6 * * ?")
+    categorias  = scheduler.get("categories", {})
+    cat_md      = "\n".join(
+        "  - `" + tipo + "`: " + datos.get("condicion", "") +
+        " → severidad " + datos.get("severidad", "")
+        for tipo, datos in categorias.items()
+    )
 
-| Proceso | Trigger | Archivo |
-|---------|---------|---------|
-| Alerta por umbral sensor | POST /api/lecturas | `LecturaSensorService.java` |
-| Alerta de cosecha pendiente | Cron cada 6h (00/06/12/18) | `CosechaAlertaScheduler.java` |
-| Auto-registro usuarios Google | Login OAuth2 | `SecurityConfig.java` |
-| Seed de datos de prueba | Arranque app (1 vez) | `DataInitializer.java` |
-| Verificación de correo | Registro local | `AuthService.java` |
-| Deploy automático | Push a main (CI pasa) | `.github/workflows/ci.yml` |
+    # Severidad desde new_in_v3.alert_severity_calculation
+    formula     = severity.get("formula", "")
+    thresholds  = severity.get("thresholds", {})
+    thresh_md   = "\n".join(
+        "  - **" + nivel + "**: " + condicion
+        for nivel, condicion in thresholds.items()
+    )
 
-## Decisiones de diseño
-
-### Backend
-- **Sin DTOs propios**: las entidades JPA se serializan directamente con Jackson.
-  `@JsonIgnoreProperties` evita serializar proxies de Hibernate.
-- **Sesión HTTP en lugar de JWT**: más simple para una SPA con mismo dominio.
-  Cookie `JSESSIONID` con `SameSite=None; Secure` para Railway (dominios distintos).
-- **Severidad de alertas calculada dinámicamente** según desviación porcentual
-  del rango `[umbralMin, umbralMax]` del sensor.
-- **Taiga proxy en backend**: evita exponer credenciales en el frontend;
-  token cacheado 23h en memoria.
-
-### Frontend
-- **React Query** para caché automático, refetch y estados loading/error.
-- **TailwindCSS** sin CSS custom: diseño verde (#166534) coherente con el dominio.
-- **i18next** con namespace único `translation`, switching en runtime.
-- **Sidebar con RBAC**: items `adminOnly: true` se filtran según `isAdmin`.
-"""
+    contenido = (
+        "# GreenHouse Manager — Arquitectura del Sistema\n\n"
+        "**Version del modelo:** " + version + " | **Fecha:** " + str(date.today()) + "\n\n"
+        "---\n\n"
+        "## Diagrama de capas\n\n"
+        "```\n"
+        "┌─────────────────────────────────────────────────────────┐\n"
+        "│                     CLIENTE (Browser)                    │\n"
+        "│              React 18 + Vite + TailwindCSS               │\n"
+        "│    React Query (cache) · Axios (HTTP) · i18next (i18n)  │\n"
+        "└───────────────────────────┬─────────────────────────────┘\n"
+        "                            │ HTTP/JSON (CORS)\n"
+        "                            │ Cookie JSESSIONID\n"
+        "┌───────────────────────────▼─────────────────────────────┐\n"
+        "│                  BACKEND (Spring Boot 3.2.5)             │\n"
+        "│                                                          │\n"
+        "│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │\n"
+        "│  │ Controllers  │  │  Services    │  │  Schedulers  │  │\n"
+        "│  │@RestController  │  @Service   │  │  @Scheduled  │  │\n"
+        "│  │ + Swagger    │  │ + JavaDoc    │  │  cron: " + cron + " │  │\n"
+        "│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │\n"
+        "│         │                 │                  │          │\n"
+        "│  ┌──────▼─────────────────▼──────────────────▼───────┐  │\n"
+        "│  │               Repositories (JPA)                   │  │\n"
+        "│  │         JpaRepository<Entity, Long>                 │  │\n"
+        "│  └──────────────────────────┬────────────────────────┘  │\n"
+        "│                              │                           │\n"
+        "│  ┌───────────────────────────▼──────────────────────┐   │\n"
+        "│  │           Spring Security                         │   │\n"
+        "│  │   Login local · OAuth2 Google · RBAC (@PreAuth)  │   │\n"
+        "│  └──────────────────────────────────────────────────┘   │\n"
+        "└───────────────────────────┬─────────────────────────────┘\n"
+        "                            │ JDBC\n"
+        "┌───────────────────────────▼─────────────────────────────┐\n"
+        "│                   PostgreSQL 15                           │\n"
+        "│  " + tablas_pg + "  │\n"
+        "└─────────────────────────────────────────────────────────┘\n"
+        "```\n\n"
+        "---\n\n"
+        "## Procesos automatizados\n\n"
+        "_Derivado de la seccion `automated_processes` del modelo JSON_\n\n" +
+        tabla_procesos + "\n\n"
+        "---\n\n"
+        "## Scheduler de cosechas\n\n"
+        "_Derivado de `new_in_v3.harvest_scheduler` del modelo JSON_\n\n"
+        "- **Cron:** `" + cron + "` (cada 6 horas: 00:00, 06:00, 12:00, 18:00)\n"
+        "- **Categorias de alerta (derivadas del modelo):**\n" +
+        cat_md + "\n\n"
+        "---\n\n"
+        "## Calculo de severidad de alertas\n\n"
+        "_Derivado de `new_in_v3.alert_severity_calculation` del modelo JSON_\n\n"
+        "- **Formula:** `" + formula + "`\n"
+        "- **Umbrales:**\n" +
+        thresh_md + "\n\n"
+        "---\n\n"
+        "## Control de acceso por rol (RBAC)\n\n"
+        "_Derivado de la seccion `roles` del modelo JSON_\n\n" +
+        roles_str + "\n\n"
+        "---\n\n"
+        "## Decisiones de diseno\n\n"
+        "### Backend\n"
+        "- **Sin DTOs propios**: las entidades JPA se serializan directamente con Jackson.\n"
+        "  `@JsonIgnoreProperties` evita serializar proxies de Hibernate.\n"
+        "- **Sesion HTTP en lugar de JWT**: cookie `JSESSIONID` con `SameSite=None; Secure`.\n"
+        "- **Taiga proxy en backend**: evita exponer credenciales en el frontend;\n"
+        "  token cacheado 23h en memoria.\n\n"
+        "### Frontend\n"
+        "- **React Query** para cache automatico, refetch y estados loading/error.\n"
+        "- **TailwindCSS** sin CSS custom: diseno verde (#166534).\n"
+        "- **i18next** con namespace unico `translation`, switching en runtime.\n"
+        "- **Sidebar con RBAC**: items `adminOnly: true` se filtran segun `isAdmin`.\n"
+    )
     escribir(DOCS / "arquitectura.md", contenido)
 
 
-# ── JavaDoc (mvn) ──────────────────────────────────────────────────────────────
+# ── javadoc-instrucciones.md ───────────────────────────────────────────────────
 
-def generar_javadoc_instrucciones():
+def generar_javadoc_instrucciones(modelo: dict):
     """
-    Muestra cómo generar el JavaDoc HTML.
-    No ejecuta mvn para no depender del entorno.
+    Genera las instrucciones de JavaDoc leyendo las URLs del modelo.
     """
-    instrucciones = f"""\
-# Generación de JavaDoc — GreenHouse Manager
+    scripts  = modelo.get("generacion_scripts", {}).get("scripts", {})
+    urls     = scripts.get("06_ejecutar_aplicacion.py", {}).get("urls_resultado", {})
+    url_sw_local  = urls.get("swagger", "http://localhost:8080/swagger-ui.html")
 
-El `pom.xml` incluye `maven-javadoc-plugin` configurado SIN ejecución
-automática para no interferir con `mvn package` en CI.
-
-## Generar manualmente
-
-```bash
-cd greenhouse-backend
-mvn javadoc:javadoc
-```
-
-Genera el sitio HTML en:
-  `greenhouse-backend/target/site/apidocs/index.html`
-
-## Contenido documentado
-
-Todos los métodos públicos de las clases @Service están anotados con:
-- `@param`   — descripción de cada parámetro
-- `@return`  — descripción del valor de retorno
-- `@throws`  — excepciones lanzadas (ResourceNotFoundException, IllegalArgumentException)
-
-Todos los endpoints @RestController están anotados con:
-- `@Operation(summary = "...")` — descripción del endpoint
-- `@ApiResponse(responseCode = "...", description = "...")` — códigos HTTP posibles
-- `@Parameter(description = "...", required = true)` — parámetros de ruta/query
-
-## Swagger UI (runtime)
-
-Disponible automáticamente al arrancar el backend:
-- Local:      http://localhost:8080/swagger-ui.html
-- Producción: https://greenhouse-backend-production-c720.up.railway.app/swagger-ui.html
-
-La documentación Swagger se genera en runtime desde las anotaciones
-`springdoc-openapi-starter-webmvc-ui 2.5.0`.
-"""
-    escribir(DOCS / "javadoc-instrucciones.md", instrucciones)
+    contenido = (
+        "# Generacion de JavaDoc -- GreenHouse Manager\n\n"
+        "El `pom.xml` incluye `maven-javadoc-plugin` configurado SIN ejecucion\n"
+        "automatica para no interferir con `mvn package` en CI.\n\n"
+        "## Generar manualmente\n\n"
+        "```bash\n"
+        "cd greenhouse-backend\n"
+        "mvn javadoc:javadoc\n"
+        "```\n\n"
+        "Genera el sitio HTML en:\n"
+        "  `greenhouse-backend/target/site/apidocs/index.html`\n\n"
+        "## Contenido documentado\n\n"
+        "Todos los metodos publicos de las clases @Service estan anotados con:\n"
+        "- `@param`   -- descripcion de cada parametro\n"
+        "- `@return`  -- descripcion del valor de retorno\n"
+        "- `@throws`  -- excepciones lanzadas (ResourceNotFoundException)\n\n"
+        "Todos los endpoints @RestController estan anotados con:\n"
+        "- `@Operation(summary = \"...\")` -- descripcion del endpoint\n"
+        "- `@ApiResponse(responseCode = \"...\")` -- codigos HTTP posibles\n"
+        "- `@Parameter(description = \"...\")` -- parametros de ruta\n\n"
+        "## Swagger UI (runtime)\n\n"
+        "Disponible automaticamente al arrancar el backend:\n"
+        "- **Local:**      " + url_sw_local + "\n"
+        "- **Produccion:** https://greenhouse-backend-production-c720.up.railway.app/swagger-ui.html\n\n"
+        "La documentacion Swagger se genera en runtime desde las anotaciones\n"
+        "`springdoc-openapi-starter-webmvc-ui 2.5.0`.\n"
+    )
+    escribir(DOCS / "javadoc-instrucciones.md", contenido)
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
     print("\n" + "=" * 60)
-    print("  GENERADOR DOCUMENTACIÓN — GreenHouse Manager")
+    print("  GENERADOR DOCUMENTACION -- GreenHouse Manager")
+    print("  Fuente: docs/modelo-json.json")
     print("=" * 60)
 
-    modelo = json.loads(MODELO.read_text(encoding="utf-8"))
+    modelo    = json.loads(MODELO.read_text(encoding="utf-8"))
+    version   = modelo.get("version", "?")
+    procesos  = modelo.get("automated_processes", {}).get("procesos", [])
+    endpoints = modelo.get("api_endpoints", {})
+
+    print("\n  Modelo v" + version)
+    print("  Procesos automatizados detectados: " + str(len(procesos)))
+    print("  Modulos de API: " + str(len(endpoints)))
+    print("")
 
     generar_readme(modelo)
     generar_api_reference(modelo)
-    generar_arquitectura()
-    generar_javadoc_instrucciones()
+    generar_arquitectura(modelo)
+    generar_javadoc_instrucciones(modelo)
 
-    print(f"\n  ✓ Documentación generada en: docs/")
-    print(f"    - README.md")
-    print(f"    - api-reference.md  ({len(modelo.get('api_endpoints',{}))} módulos)")
-    print(f"    - arquitectura.md")
-    print(f"    - javadoc-instrucciones.md")
-    print(f"\n  Para generar JavaDoc HTML:")
-    print(f"    cd greenhouse-backend && mvn javadoc:javadoc")
-    print(f"    → target/site/apidocs/index.html")
+    print("\n  ✓ Documentacion generada en: docs/")
+    print("    - README.md")
+    print("    - api-reference.md  (" + str(len(endpoints)) + " modulos)")
+    print("    - arquitectura.md   (" + str(len(procesos)) + " procesos automatizados)")
+    print("    - javadoc-instrucciones.md")
+    print("\n  Para generar JavaDoc HTML:")
+    print("    cd greenhouse-backend && mvn javadoc:javadoc")
+    print("    → target/site/apidocs/index.html")
 
 
 if __name__ == "__main__":

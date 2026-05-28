@@ -95,6 +95,48 @@
     "v2.0.0 — Tratamiento.tipoTratamiento: añadido REVISION para novedades de enfermedad",
     "v2.0.0 — Sensor: umbralMin/umbralMax para generación automática de alertas"
   ],
+  "automated_processes": {
+    "descripcion": "Procesos del sistema que se ejecutan de forma automatica (sin interaccion del usuario)",
+    "procesos": [
+      {
+        "nombre": "Alerta por umbral de sensor",
+        "trigger": "POST /api/lecturas",
+        "archivo": "LecturaSensorService.java",
+        "descripcion": "Cuando una lectura supera umbralMin/umbralMax del sensor, genera Alerta automaticamente con severidad calculada"
+      },
+      {
+        "nombre": "Alerta de cosecha pendiente",
+        "trigger": "Cron cada 6h (00:00, 06:00, 12:00, 18:00)",
+        "archivo": "CosechaAlertaScheduler.java",
+        "descripcion": "Evalua plantas activas y genera alertas COSECHA_PROXIMA/LISTA/VENCIDA/MUY_VENCIDA segun diasRestantes"
+      },
+      {
+        "nombre": "Auto-registro de usuarios Google",
+        "trigger": "Login OAuth2 (primer acceso)",
+        "archivo": "SecurityConfig.java",
+        "descripcion": "Si el email no existe, crea Empleado con rol EMPLEADO y authProvider=GOOGLE"
+      },
+      {
+        "nombre": "Seed de datos de prueba",
+        "trigger": "Arranque de la aplicacion (CommandLineRunner, una sola vez)",
+        "archivo": "DataInitializer.java",
+        "descripcion": "Inserta empleados, zonas, tipos de planta, plantas, sensores, alertas y cosechas de prueba si la BD esta vacia"
+      },
+      {
+        "nombre": "Verificacion de correo electronico",
+        "trigger": "POST /api/auth/register",
+        "archivo": "AuthService.java",
+        "descripcion": "Al registrarse localmente envia email con token UUID; expira a las 24h"
+      },
+      {
+        "nombre": "Deploy automatico",
+        "trigger": "Push a rama main (CI pasa los 6 jobs previos)",
+        "archivo": ".github/workflows/ci.yml",
+        "descripcion": "GitHub Actions despliega el backend en Railway solo si todos los tests pasan"
+      }
+    ]
+  },
+
   "new_in_v3": {
     "sensor_inline_creation": {
       "description": "El formulario de zona (ZonasPage.tsx) permite agregar sensores inline",
