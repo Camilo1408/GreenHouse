@@ -9,7 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { plantaService, zonaService, tipoPlantaService } from '../services/api'
 import toast from 'react-hot-toast'
 import type { Planta, Zona, TipoPlanta } from '../types'
-import { Plus, Pencil, Trash2, Leaf } from 'lucide-react'
+import { Plus, Pencil, Trash2, Leaf, PlusCircle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 type PlantaEstado = Planta['estado']
@@ -54,6 +54,10 @@ export default function PlantasPage() {
   const [editId, setEditId] = useState<number | null>(null)
   const [showForm, setShowForm] = useState(false)
 
+  // Sub-form para crear nuevo tipo de planta inline
+  const [showNuevoTipo, setShowNuevoTipo] = useState(false)
+  const [nuevoTipoForm, setNuevoTipoForm] = useState({ nombre: '', cicloDias: '', descripcion: '' })
+
   const { data: plantas = [], isLoading } = useQuery<Planta[]>({
     queryKey: ['plantas'],
     queryFn: () => plantaService.getAll().then(r => r.data),
@@ -95,6 +99,27 @@ export default function PlantasPage() {
     },
   })
 
+  const createTipo = useMutation({
+    mutationFn: () =>
+      tipoPlantaService.create({
+        nombre:    nuevoTipoForm.nombre.trim(),
+        cicloDias: Number(nuevoTipoForm.cicloDias),
+        descripcion: nuevoTipoForm.descripcion.trim() || undefined,
+      }),
+    onSuccess: (res) => {
+      const newTipo: TipoPlanta = res.data
+      qc.invalidateQueries({ queryKey: ['tiposPlanta'] })
+      // Auto-seleccionar el tipo recién creado
+      setForm(prev => ({ ...prev, tipoPlantaId: String(newTipo.id ?? '') }))
+      setNuevoTipoForm({ nombre: '', cicloDias: '', descripcion: '' })
+      setShowNuevoTipo(false)
+      toast.success(`Tipo "${newTipo.nombre}" creado y seleccionado`)
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message ?? 'Error al crear el tipo de planta')
+    },
+  })
+
   const remove = useMutation({
     mutationFn: (id: number) => plantaService.delete(id),
     onSuccess: () => {
@@ -128,7 +153,7 @@ export default function PlantasPage() {
         </h1>
         {canWrite && (
           <button
-            onClick={() => { setShowForm(true); setForm(emptyForm); setEditId(null) }}
+            onClick={() => { setShowForm(true); setForm(emptyForm); setEditId(null); setShowNuevoTipo(false); setNuevoTipoForm({ nombre: '', cicloDias: '', descripcion: '' }) }}
             className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 text-sm"
           >
             <Plus size={16} /> {t('planta.nueva')}
@@ -151,20 +176,97 @@ export default function PlantasPage() {
                 placeholder="PL-001"
               />
             </div>
-            <div>
+            <div className="md:col-span-2 lg:col-span-3">
               <label className="text-sm text-gray-600">{t('planta.tipo')}</label>
-              <select
-                className="w-full border rounded-lg px-3 py-2 mt-1 text-sm"
-                value={form.tipoPlantaId}
-                onChange={e => setForm({ ...form, tipoPlantaId: e.target.value })}
-              >
-                <option value="">— Seleccionar —</option>
-                {tipos.map(tp => (
-                  <option key={tp.id} value={tp.id}>
-                    {tp.nombre} ({tp.cicloDias} días)
-                  </option>
-                ))}
-              </select>
+              <div className="flex gap-2 mt-1">
+                <select
+                  id="tipo-planta-select"
+                  className="flex-1 border rounded-lg px-3 py-2 text-sm"
+                  value={form.tipoPlantaId}
+                  onChange={e => {
+                    setForm({ ...form, tipoPlantaId: e.target.value })
+                    if (e.target.value !== '__nuevo__') setShowNuevoTipo(false)
+                  }}
+                >
+                  <option value="">— Seleccionar —</option>
+                  {tipos.map(tp => (
+                    <option key={tp.id} value={tp.id}>
+                      {tp.nombre} ({tp.cicloDias} días)
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  title="Crear nuevo tipo de planta"
+                  onClick={() => {
+                    setShowNuevoTipo(prev => !prev)
+                    if (!showNuevoTipo) setForm(prev => ({ ...prev, tipoPlantaId: '' }))
+                  }}
+                  className="flex items-center gap-1 bg-green-50 border border-green-300 text-green-700 hover:bg-green-100 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap"
+                >
+                  <PlusCircle size={14} /> Nuevo tipo
+                </button>
+              </div>
+
+              {/* Sub-formulario inline para crear un nuevo tipo de planta */}
+              {showNuevoTipo && (
+                <div className="mt-3 border border-green-200 bg-green-50 rounded-lg p-4 space-y-3">
+                  <p className="text-xs font-semibold text-green-800 uppercase tracking-wide">
+                    Crear nuevo tipo de planta
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-600">Nombre *</label>
+                      <input
+                        id="nuevo-tipo-nombre"
+                        className="w-full border rounded-md px-2 py-1.5 mt-0.5 text-sm"
+                        placeholder="Ej: Tomate Cherry"
+                        value={nuevoTipoForm.nombre}
+                        onChange={e => setNuevoTipoForm(prev => ({ ...prev, nombre: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">Ciclo (días) *</label>
+                      <input
+                        id="nuevo-tipo-ciclo"
+                        type="number"
+                        min="1"
+                        className="w-full border rounded-md px-2 py-1.5 mt-0.5 text-sm"
+                        placeholder="Ej: 90"
+                        value={nuevoTipoForm.cicloDias}
+                        onChange={e => setNuevoTipoForm(prev => ({ ...prev, cicloDias: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">Descripción</label>
+                      <input
+                        className="w-full border rounded-md px-2 py-1.5 mt-0.5 text-sm"
+                        placeholder="Opcional"
+                        value={nuevoTipoForm.descripcion}
+                        onChange={e => setNuevoTipoForm(prev => ({ ...prev, descripcion: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      id="btn-crear-tipo"
+                      type="button"
+                      disabled={!nuevoTipoForm.nombre.trim() || !nuevoTipoForm.cicloDias || createTipo.isPending}
+                      onClick={() => createTipo.mutate()}
+                      className="bg-green-700 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-green-800 disabled:opacity-50"
+                    >
+                      {createTipo.isPending ? 'Creando...' : 'Crear y seleccionar'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowNuevoTipo(false); setNuevoTipoForm({ nombre: '', cicloDias: '', descripcion: '' }) }}
+                      className="bg-white border border-gray-300 text-gray-600 px-3 py-1.5 rounded-md text-xs hover:bg-gray-50"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
             <div>
               <label className="text-sm text-gray-600">{t('planta.zona')}</label>
@@ -221,7 +323,7 @@ export default function PlantasPage() {
               {t('common.save')}
             </button>
             <button
-              onClick={() => { setShowForm(false); setForm(emptyForm); setEditId(null) }}
+              onClick={() => { setShowForm(false); setForm(emptyForm); setEditId(null); setShowNuevoTipo(false); setNuevoTipoForm({ nombre: '', cicloDias: '', descripcion: '' }) }}
               className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200"
             >
               {t('common.cancel')}

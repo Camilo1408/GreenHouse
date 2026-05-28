@@ -85,3 +85,61 @@ class TestPlantasAPI:
         """GET /api/plantas/99999 debe retornar 404."""
         r = auth_session.get(f"{BASE_PLANTAS}/99999")
         assert r.status_code == 404
+
+
+class TestTipoPlantaInlineCreacion:
+    """
+    HU-16 — Pruebas de API para la creación inline de tipos de planta.
+    Valida que POST /api/tipos-planta funciona correctamente con los datos
+    mínimos que envía el sub-formulario inline del frontend.
+    """
+
+    tipo_id = None
+
+    def test_crear_tipo_planta_inline_minimo(self, auth_session, cleanup_registry):
+        """
+        POST /api/tipos-planta con nombre + cicloDias debe retornar 201
+        y devolver el tipo creado con id asignado.
+        (Simula el envío mínimo del sub-form inline de PlantasPage)
+        """
+        payload = {
+            "nombre":    f"Tipo Inline Test {_TS}",
+            "cicloDias": 75,
+        }
+        r = auth_session.post(BASE_TIPOS, json=payload)
+        assert r.status_code == 201, f"Se esperaba 201, se obtuvo {r.status_code}: {r.text}"
+        data = r.json()
+        assert "id" in data, "La respuesta debe incluir el id del tipo creado"
+        assert data["nombre"] == payload["nombre"]
+        assert data["cicloDias"] == payload["cicloDias"]
+        TestTipoPlantaInlineCreacion.tipo_id = data["id"]
+        cleanup_registry["tipos_planta"].append(data["id"])
+
+    def test_crear_tipo_planta_inline_con_descripcion(self, auth_session, cleanup_registry):
+        """
+        POST /api/tipos-planta con nombre + cicloDias + descripcion debe retornar 201.
+        (Simula el envío opcional con descripción desde el sub-form inline)
+        """
+        payload = {
+            "nombre":      f"Tipo Desc Test {_TS}",
+            "cicloDias":   45,
+            "descripcion": "Variedad de prueba para CI",
+        }
+        r = auth_session.post(BASE_TIPOS, json=payload)
+        assert r.status_code == 201, f"Se esperaba 201, se obtuvo {r.status_code}: {r.text}"
+        data = r.json()
+        assert data["nombre"] == payload["nombre"]
+        cleanup_registry["tipos_planta"].append(data["id"])
+
+    def test_tipo_creado_aparece_en_listado(self, auth_session):
+        """
+        Después de crear un tipo, GET /api/tipos-planta debe incluirlo en la lista.
+        (Valida que el frontend puede auto-seleccionar el nuevo tipo tras invalidar la query)
+        """
+        if TestTipoPlantaInlineCreacion.tipo_id is None:
+            pytest.skip("test_crear_tipo_planta_inline_minimo no se ejecutó o falló")
+        r = auth_session.get(BASE_TIPOS)
+        assert r.status_code == 200
+        ids = [t["id"] for t in r.json()]
+        assert TestTipoPlantaInlineCreacion.tipo_id in ids, \
+            f"El tipo {TestTipoPlantaInlineCreacion.tipo_id} no aparece en GET /api/tipos-planta"

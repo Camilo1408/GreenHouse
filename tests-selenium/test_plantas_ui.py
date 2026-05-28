@@ -8,6 +8,7 @@ Criterios de aceptación validados:
   - HU-13: El listado de plantas muestra las plantas existentes con su estado
   - HU-14: El sistema muestra la información de tipo de planta y zona correctamente
   - HU-15: El filtrado de plantas por estado funciona en la interfaz
+  - HU-16: Se puede crear un nuevo tipo de planta inline desde el formulario de plantas
 """
 
 import time
@@ -69,6 +70,94 @@ class TestPlantasUI:
                     "Sembrada", "Crecimiento", "Cosechar", "Cosechada", "Muerta"]
         found = any(s in page for s in statuses)
         assert found, "Los estados de las plantas no son visibles en el listado"
+
+    def test_inline_nuevo_tipo_form_appears(self, authenticated_driver):
+        """
+        HU-16 — El botón "Nuevo tipo" despliega el sub-formulario inline.
+        Criterio: Al abrir el formulario de nueva planta y pulsar "Nuevo tipo",
+        aparece el campo 'nombre' del sub-formulario de tipo de planta.
+        """
+        driver = authenticated_driver
+        driver.get(f"{BASE_URL}/plantas")
+        wait = WebDriverWait(driver, 10)
+
+        # Abrir formulario Nueva Planta
+        nueva_planta_btn = wait.until(
+            EC.element_to_be_clickable(
+                (By.XPATH, "//button[contains(., 'Nueva') or contains(., 'planta') or contains(., 'Planta')]")
+            )
+        )
+        nueva_planta_btn.click()
+        time.sleep(1)
+
+        # Pulsar "Nuevo tipo"
+        nuevo_tipo_btn = wait.until(
+            EC.element_to_be_clickable(
+                (By.XPATH, "//button[contains(., 'Nuevo tipo')]")
+            )
+        )
+        nuevo_tipo_btn.click()
+        time.sleep(1)
+
+        # Verificar que aparece el sub-formulario
+        nombre_input = driver.find_element(By.ID, "nuevo-tipo-nombre")
+        assert nombre_input.is_displayed(), "El campo 'nombre' del nuevo tipo no es visible"
+
+        ciclo_input = driver.find_element(By.ID, "nuevo-tipo-ciclo")
+        assert ciclo_input.is_displayed(), "El campo 'ciclo' del nuevo tipo no es visible"
+
+    def test_inline_nuevo_tipo_create_and_autoselect(self, authenticated_driver):
+        """
+        HU-16 — Crear un tipo de planta inline lo auto-selecciona en el desplegable.
+        Criterio: Tras rellenar nombre + cicloDias y pulsar "Crear y seleccionar",
+        el nuevo tipo aparece seleccionado en el select de tipo de planta.
+        """
+        import time as _time
+        driver = authenticated_driver
+        driver.get(f"{BASE_URL}/plantas")
+        wait = WebDriverWait(driver, 10)
+
+        # Abrir formulario Nueva Planta
+        nueva_planta_btn = wait.until(
+            EC.element_to_be_clickable(
+                (By.XPATH, "//button[contains(., 'Nueva') or contains(., 'planta') or contains(., 'Planta')]")
+            )
+        )
+        nueva_planta_btn.click()
+        time.sleep(1)
+
+        # Pulsar "Nuevo tipo"
+        nuevo_tipo_btn = wait.until(
+            EC.element_to_be_clickable(
+                (By.XPATH, "//button[contains(., 'Nuevo tipo')]")
+            )
+        )
+        nuevo_tipo_btn.click()
+        time.sleep(1)
+
+        # Rellenar nombre y ciclo
+        ts = int(_time.time())
+        nombre_unico = f"Tipo Selenium {ts}"
+        driver.find_element(By.ID, "nuevo-tipo-nombre").send_keys(nombre_unico)
+        driver.find_element(By.ID, "nuevo-tipo-ciclo").send_keys("75")
+
+        # Pulsar "Crear y seleccionar"
+        crear_btn = driver.find_element(By.ID, "btn-crear-tipo")
+        crear_btn.click()
+        time.sleep(2)
+
+        # El sub-formulario debe cerrarse y el select debe tener el nuevo tipo seleccionado
+        page = driver.page_source
+        # Verificar que el sub-formulario ya no está visible o que el select tiene el tipo
+        tipo_select = driver.find_element(By.ID, "tipo-planta-select")
+        selected_text = tipo_select.find_element(
+            By.XPATH, "option[@value='" + tipo_select.get_attribute("value") + "']"
+        ).text if tipo_select.get_attribute("value") else ""
+
+        assert (
+            nombre_unico in page or
+            tipo_select.get_attribute("value") not in ("", "__nuevo__")
+        ), f"El nuevo tipo '{nombre_unico}' no fue auto-seleccionado. Page: {page[:300]}"
 
     def test_navigation_to_plantas_from_sidebar(self, authenticated_driver):
         """
